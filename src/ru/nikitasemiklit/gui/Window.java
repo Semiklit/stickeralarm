@@ -2,6 +2,7 @@ package ru.nikitasemiklit.gui;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.stream.JsonReader;
 import org.knowm.xchart.*;
 import ru.nikitasemiklit.enums.TYPE_DATA_TO_DRAW;
 import ru.nikitasemiklit.model.Model;
@@ -21,7 +22,8 @@ public class Window extends JFrame {
     private long timeFrom;
     private long timeTo;
 
-    private static ModelParameters modelParameters = new ModelParameters();
+    private static ModelParameters modelParameters;
+
     private Model model;
     private RawData rawData;
 
@@ -29,9 +31,10 @@ public class Window extends JFrame {
 
     private static final JButton countButton = new JButton("Пересчитать");
     private static final JButton openFileButton = new JButton("Открыть файл");
-    private static final JButton saveChartButton = new JButton("Сохранить");
+    private static final JButton saveChartButton = new JButton("Сохранить график");
     private static final JButton countCriticalSensorsButton = new JButton("Применить");
     private static final JButton saveConfigurationButton = new JButton("Сохранить конфигурацию");
+    private static final JButton resetConfigurationButton = new JButton("Сбросить");
 
     private static final JLabel statusLabel = new JLabel("Статус");
     private static final JLabel filePathLabel = new JLabel("Путь к файлу");
@@ -53,6 +56,11 @@ public class Window extends JFrame {
     private static final JLabel abnormalIntervalLabel = new JLabel("Check interval of abnormality");
     private static final JLabel abnormalStickerAlarmLabel = new JLabel("Abnormal thermocouples count threshold of sticking alarm");
     private static final JLabel abnormalStickerWarningLabel = new JLabel("Abnormal thermocouples count threshold of sticking warning");
+    private static final JLabel minimumCastLentghLabel = new JLabel("Minimum cast length");
+    private static final JLabel minimumSpeedLabel = new JLabel("Minimum speed before sticker");
+    private static final JLabel maximumSpeedRateLabel = new JLabel("Maximum speed rate before sticker");
+    private static final JLabel timeForAlarmCheckingLabel = new JLabel("Time for checking alarm");
+    private static final JLabel minimumTimeSinceLastAlarmDetectedLabel = new JLabel("Minimum time since last detected alarm");
 
     private static final JTextField filePathField = new JTextField();
 
@@ -63,21 +71,26 @@ public class Window extends JFrame {
     private static final JTextField dataToDrawField = new JTextField();
     private static final JTextField timeFromField = new JTextField();
     private static final JTextField timeToField = new JTextField();
-    private static final JTextField intervalForCalculatingSecField = new JTextField ("5");
-    private static final JTextField minimumRisingRateField = new JTextField("0.18");
-    private static final JTextField maximumRisingRateField = new JTextField("2.2");
-    private static final JTextField minimumFallingRateField = new JTextField("-0.17");
-    private static final JTextField maximumFallingRateField = new JTextField("-2.0");
-    private static final JTextField minimumTempretureField = new JTextField("50");
-    private static final JTextField maximumTeptretureField = new JTextField("200");
-    private static final JTextField minimumDurationTempRiseField = new JTextField("3");
-    private static final JTextField maximumDurationTempRiseField = new JTextField("25");
-    private static final JTextField minimumDurationTempFallField = new JTextField("5");
-    private static final JTextField minimumRatioStickerSpeedToCastingSpeedField = new JTextField("0.38");
-    private static final JTextField maximumRatioStickerSpeedToCastingSpeedField = new JTextField("1.5");
-    private static final JTextField abnormalIntervalField = new JTextField("30");
-    private static final JTextField abnormalStickerAlarmField = new JTextField("6");
-    private static final JTextField abnormalStickerWarningField = new JTextField("3");
+    private static final JTextField intervalForCalculatingSecField = new JTextField ();
+    private static final JTextField minimumRisingRateField = new JTextField();
+    private static final JTextField maximumRisingRateField = new JTextField();
+    private static final JTextField minimumFallingRateField = new JTextField();
+    private static final JTextField maximumFallingRateField = new JTextField();
+    private static final JTextField minimumTempretureField = new JTextField();
+    private static final JTextField maximumTeptretureField = new JTextField();
+    private static final JTextField minimumDurationTempRiseField = new JTextField();
+    private static final JTextField maximumDurationTempRiseField = new JTextField();
+    private static final JTextField minimumDurationTempFallField = new JTextField();
+    private static final JTextField minimumRatioStickerSpeedToCastingSpeedField = new JTextField();
+    private static final JTextField maximumRatioStickerSpeedToCastingSpeedField = new JTextField();
+    private static final JTextField abnormalIntervalField = new JTextField();
+    private static final JTextField abnormalStickerAlarmField = new JTextField();
+    private static final JTextField abnormalStickerWarningField = new JTextField();
+    private static final JTextField minimumCastLentghField = new JTextField();
+    private static final JTextField minimumSpeedField = new JTextField();
+    private static final JTextField maximumSpeedRateField = new JTextField();
+    private static final JTextField timeForAlarmCheckingField = new JTextField();
+    private static final JTextField minimumTimeSinceLastAlarmDetectedField = new JTextField();
 
     private static final JCheckBox speedLineCheckBox = new JCheckBox("Отображать скорость", true);
 
@@ -170,6 +183,7 @@ public class Window extends JFrame {
         calculationControllArea.add(maximumTeptretureField);
         calculationControllArea.add(minimumDurationTempRiseLabel);
         calculationControllArea.add(minimumDurationTempRiseField);
+        calculationControllArea.add(countCriticalSensorsButton);
 
         Container calculationSecondControllArea = new Container();
         calculationSecondControllArea.setLayout(new BoxLayout(calculationSecondControllArea, BoxLayout.Y_AXIS));
@@ -187,15 +201,38 @@ public class Window extends JFrame {
         calculationSecondControllArea.add(abnormalStickerAlarmField);
         calculationSecondControllArea.add(abnormalStickerWarningLabel);
         calculationSecondControllArea.add(abnormalStickerWarningField);
-        calculationSecondControllArea.add(countCriticalSensorsButton);
         calculationSecondControllArea.add(saveConfigurationButton);
+
+        Container alarmCheckingControllArea = new Container();
+        alarmCheckingControllArea.setLayout(new BoxLayout(alarmCheckingControllArea, BoxLayout.Y_AXIS));
+        alarmCheckingControllArea.add(minimumCastLentghLabel);
+        alarmCheckingControllArea.add(minimumCastLentghField);
+        alarmCheckingControllArea.add(minimumSpeedLabel);
+        alarmCheckingControllArea.add(minimumSpeedField);
+        alarmCheckingControllArea.add(maximumSpeedRateLabel);
+        alarmCheckingControllArea.add(maximumSpeedRateField);
+        alarmCheckingControllArea.add(timeForAlarmCheckingLabel);
+        alarmCheckingControllArea.add(timeForAlarmCheckingField);
+        alarmCheckingControllArea.add(minimumTimeSinceLastAlarmDetectedLabel);
+        alarmCheckingControllArea.add(minimumTimeSinceLastAlarmDetectedField);
+        alarmCheckingControllArea.add(resetConfigurationButton);
 
         bottomArea.add(dataControllArea);
         bottomArea.add(calculationControllArea);
         bottomArea.add(calculationSecondControllArea);
+        bottomArea.add(alarmCheckingControllArea);
         workArea.add(bottomArea);
         mainContainer.add(workArea, BorderLayout.CENTER);
         mainContainer.add(statusLabel, BorderLayout.SOUTH);
+
+        try {
+            Gson gson = new GsonBuilder().create();
+            JsonReader reader = new JsonReader(new FileReader(CONFIG_FILE));
+            modelParameters = gson.fromJson(reader, ModelParameters.class);
+        } catch (FileNotFoundException ex){
+            modelParameters = new ModelParameters();
+        }
+        resetFields();
 
         countCriticalSensorsButton.addActionListener(new AbstractAction() {
             @Override
@@ -271,6 +308,15 @@ public class Window extends JFrame {
                 }
             }
         });
+
+        resetConfigurationButton.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                modelParameters = new ModelParameters();
+                resetFields();
+            }
+        });
+
     }
 
     private void recountModelParameters(){
@@ -289,8 +335,37 @@ public class Window extends JFrame {
         int abnormalInterval = Integer.parseInt(abnormalIntervalField.getText());
         int abnormalStickerAlarm = Integer.parseInt(abnormalStickerAlarmField.getText());
         int abnormalStickerWarning = Integer.parseInt(abnormalStickerWarningField.getText());
+        int minimumCastLentgh = Integer.parseInt(minimumCastLentghField.getText());
+        double minimumSpeed = Double.parseDouble(minimumSpeedField.getText());
+        double maximumSpeedRate = Double.parseDouble(maximumSpeedRateField.getText());
+        long timeForAlarmChecking = Long.parseLong(timeForAlarmCheckingField.getText());
+        long minimumTimeSinceLastAlarmDetected = Long.parseLong(minimumTimeSinceLastAlarmDetectedField.getText());
         modelParameters = new ModelParameters(intervalForCalculatingSec, minimumRisingRate, maximumRisingRate, minimumFallingRate, maximumFallingRate, minimumTempreture, maximumTeptreture,
                 minimumDurationTempRise, maximumDurationTempRise, minimumDurationTempFall, minimumRatioStickerSpeedToCastingSpeed, maximumRatioStickerSpeedToCastingSpeed, abnormalInterval,
-                abnormalStickerAlarm, abnormalStickerWarning);
+                abnormalStickerAlarm, abnormalStickerWarning, minimumCastLentgh, minimumSpeed, maximumSpeedRate, timeForAlarmChecking, minimumTimeSinceLastAlarmDetected);
     }
+
+    private void resetFields (){
+        intervalForCalculatingSecField.setText(Integer.toString(modelParameters.getIntervalForCalculatingSec()));
+        minimumRisingRateField.setText(Double.toString(modelParameters.getMinimumRisingRate()));
+        maximumRisingRateField.setText(Double.toString(modelParameters.getMaximumRisingRate()));
+        minimumFallingRateField.setText(Double.toString(modelParameters.getMinimumFallingRate()));
+        maximumFallingRateField.setText(Double.toString(modelParameters.getMaximumFallingRate()));
+        minimumTempretureField.setText(Integer.toString(modelParameters.getMinimumTempreture()));
+        maximumTeptretureField.setText(Integer.toString(modelParameters.getMaximumTempreture()));
+        minimumDurationTempRiseField.setText(Integer.toString(modelParameters.getMinimumDurationTempRise()));
+        maximumDurationTempRiseField.setText(Integer.toString(modelParameters.getMaximumDurationTempRise()));
+        minimumDurationTempFallField.setText(Integer.toString(modelParameters.getMinimumDurationTempFall()));
+        minimumRatioStickerSpeedToCastingSpeedField.setText(Double.toString(modelParameters.getMinimumRatioStickerSpeedToCastingSpeed()));
+        maximumRatioStickerSpeedToCastingSpeedField.setText(Double.toString(modelParameters.getMaximumRatioStickerSpeedToCastingSpeed()));
+        abnormalIntervalField.setText(Integer.toString(modelParameters.getAbnormalInterval()));
+        abnormalStickerAlarmField.setText(Integer.toString(modelParameters.getAbnormalStickerAlarm()));
+        abnormalStickerWarningField.setText(Integer.toString(modelParameters.getAbnormalStickerWarning()));
+        minimumCastLentghField.setText(Integer.toString(modelParameters.getMinimumCastLentgh()));
+        minimumSpeedField.setText(Double.toString(modelParameters.getMinimumSpeed()));
+        maximumSpeedRateField.setText(Double.toString(modelParameters.getMaximumSpeedRate()));
+        timeForAlarmCheckingField.setText(Long.toString(modelParameters.getTimeForAlarmChecking()));
+        minimumTimeSinceLastAlarmDetectedField.setText(Long.toString(modelParameters.getMinimumTimeSinceLastAlarmDetected()));
+    }
+
     }

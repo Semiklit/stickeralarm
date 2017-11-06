@@ -34,6 +34,8 @@ public class Model {
     private Vector<FallingSensor> fallingSensors = new Vector<>();
     private Vector<int[]> abnormalTCDeteted = new Vector<>();
 
+    private long lastDetectedAlarmTime = 0;
+
     //КОСТЫЛЬ!!!
     private long firstTimeOfStickerFound;
 
@@ -46,7 +48,7 @@ public class Model {
         this.tempretureRate = tempretureRate;
     }
 
-    public void countCriticalSensors (ModelParameters parametres) {
+    public void countCriticalSensors (ModelParameters modelParameters) {
 
         risingSensors.clear();
         fallingSensors.clear();
@@ -69,14 +71,14 @@ public class Model {
 
             for (double[] el : tempretureRate) {
                 //повышение температуры
-                if ((el[i] > parametres.getMinimumRisingRate() && el[i] < parametres.getMaximumRisingRate())) {
+                if ((el[i] > modelParameters.getMinimumRisingRate() && el[i] < modelParameters.getMaximumRisingRate())) {
                     if (firstTimeRise == 0) {
                         firstTimeRise = timeLine.elementAt(tempretureRate.indexOf(el));
                     }
                     lastTimeRise = timeLine.elementAt(tempretureRate.indexOf(el));
                 } else {
                     if (lastTimeRise != 0) {
-                        if ((lastTimeRise - firstTimeRise > parametres.getMinimumDurationTempRise()) && (lastTimeRise - firstTimeRise < parametres.getMaximumDurationTempRise())) {
+                        if ((lastTimeRise - firstTimeRise > modelParameters.getMinimumDurationTempRise()) && (lastTimeRise - firstTimeRise < modelParameters.getMaximumDurationTempRise())) {
                             risingSensors.add(new RisingSensor(i, firstTimeRise, lastTimeRise));
                             tempretureRiseDetected.elementAt(timeLine.indexOf(firstTimeRise))[i] = 1;
                         }
@@ -86,14 +88,14 @@ public class Model {
                 }
 
                 //понижение температуры
-                if ((el[i] > parametres.getMaximumFallingRate() && el[i] < parametres.getMinimumFallingRate())) {
+                if ((el[i] > modelParameters.getMaximumFallingRate() && el[i] < modelParameters.getMinimumFallingRate())) {
                     if (firstTimeFall == 0) {
                         firstTimeFall = timeLine.elementAt(tempretureRate.indexOf(el));
                     }
                     lastTimeFall = timeLine.elementAt(tempretureRate.indexOf(el));
                 } else {
                     if (lastTimeFall != 0) {
-                        if (lastTimeFall - firstTimeFall > parametres.getMinimumDurationTempFall()) {
+                        if (lastTimeFall - firstTimeFall > modelParameters.getMinimumDurationTempFall()) {
                             fallingSensors.add(new FallingSensor(i, firstTimeFall, lastTimeFall));
                             tempretureFallDetected.elementAt(timeLine.indexOf(firstTimeFall))[i] = 1;
                         }
@@ -104,12 +106,12 @@ public class Model {
 
             }
             if (lastTimeRise != 0) {
-                if ((lastTimeRise - firstTimeRise > parametres.getMinimumDurationTempRise()) && (lastTimeRise - firstTimeRise < parametres.getMaximumDurationTempRise())) {
+                if ((lastTimeRise - firstTimeRise > modelParameters.getMinimumDurationTempRise()) && (lastTimeRise - firstTimeRise < modelParameters.getMaximumDurationTempRise())) {
                     risingSensors.add(new RisingSensor(i, firstTimeRise, lastTimeRise));
                 }
             }
             if (lastTimeFall != 0) {
-                if (lastTimeFall - firstTimeFall > parametres.getMinimumDurationTempFall()) {
+                if (lastTimeFall - firstTimeFall > modelParameters.getMinimumDurationTempFall()) {
                     fallingSensors.add(new FallingSensor(i, firstTimeFall, lastTimeFall));
                 }
             }
@@ -137,7 +139,7 @@ public class Model {
                 //если датчик сработал
                 if (el[i] == 1) {
                     int currentIndex = tempretureRiseDetected.indexOf(el);
-                    long latestTime = timeLine.elementAt(currentIndex) - parametres.getAbnormalInterval();
+                    long latestTime = timeLine.elementAt(currentIndex) - modelParameters.getAbnormalInterval();
 
                     //костыль----
                     firstTimeOfStickerFound = timeLine.elementAt(currentIndex);
@@ -149,7 +151,7 @@ public class Model {
                     if (firstTimeOfStickerFound != timeLine.elementAt(currentIndex)) {
                         double castSpeed = speedLine.elementAt(currentIndex);
                         double stickerSpeed = 60 * sensorsCount * DISTANCE_BETWEEN_SENSORS / (timeLine.elementAt(currentIndex) - firstTimeOfStickerFound);
-                        if (parametres.getMinimumRatioStickerSpeedToCastingSpeed() * castSpeed <= stickerSpeed && parametres.getMaximumRatioStickerSpeedToCastingSpeed() * castSpeed >= stickerSpeed) {
+                        if (modelParameters.getMinimumRatioStickerSpeedToCastingSpeed() * castSpeed <= stickerSpeed && modelParameters.getMaximumRatioStickerSpeedToCastingSpeed() * castSpeed >= stickerSpeed) {
                             //проверяем, падала ли температура
                             boolean tempretureFall = false;
                             for (int j = timeLine.indexOf(firstTimeOfStickerFound); j < currentIndex; j++) {
@@ -185,16 +187,15 @@ public class Model {
         for (int[] el : abnormalTCDeteted){
             for (int i = 0; i < el.length - 2; i++){
                 if ((el [i + 1] >= 2) && (el[i] + el[i + 2] >= 1)){
-/*
-                    if (castLengthLine.elementAt(abnormalTCDeteted.indexOf(el)) >= 3){}
-                    if (speedLine.elementAt(abnormalTCDeteted.indexOf(el)) < 0.5){} //за последние 120с
-                    if (speedRate.elementAt(abnormalTCDeteted.indexOf(el)) < 0.006) {} // за последние 120с
+                    //Проверяем условия отмены
+                    boolean isAlarmPossible = checkAlarmPossibility(abnormalTCDeteted.indexOf(el), modelParameters);
                     // за последние 60с небыло вызовов
-*/
-                    if (el [i] + el[i + 1] + el[i + 2] >= parametres.getAbnormalStickerAlarm()){
+                    if (el [i] + el[i + 1] + el[i + 2] >= modelParameters.getAbnormalStickerAlarm() && isAlarmPossible){
+                        lastDetectedAlarmTime = timeLine.elementAt(abnormalTCDeteted.indexOf(el));
                         algorithmResult.append("Sticker Alarm at " + timeLine.elementAt(abnormalTCDeteted.indexOf(el)) + " in " + coords[i + 1] + "\n");
+
                     } else {
-                        if (el [i] + el[i + 1] + el[i + 2] >= parametres.getAbnormalStickerWarning()){
+                        if (el [i] + el[i + 1] + el[i + 2] >= modelParameters.getAbnormalStickerWarning()){
                             algorithmResult.append("Sticker Warning at " + timeLine.elementAt(abnormalTCDeteted.indexOf(el)) + " in " + coords[i + 1] + "\n");
                         }
                     }
@@ -206,6 +207,31 @@ public class Model {
         algorithmResultPane.pack();
         algorithmResultPane.setVisible(true);
 
+    }
+
+    private boolean checkAlarmPossibility (int index, ModelParameters modelParameters){
+
+        if (castLengthLine.elementAt(index) < modelParameters.getMinimumCastLentgh()) {
+            return false;
+        }
+
+        if (lastDetectedAlarmTime > timeLine.elementAt(index) - modelParameters.getMinimumTimeSinceLastAlarmDetected()){
+            return false;
+        }
+
+        int currentIndex = index;
+        while (currentIndex >= 0 && timeLine.elementAt(currentIndex) >= timeLine.elementAt(index) - modelParameters.getTimeForAlarmChecking()){
+
+            if (speedLine.elementAt(currentIndex) < modelParameters.getMinimumSpeed()){
+                return false;
+
+            }
+            if (speedRate.elementAt(currentIndex) > modelParameters.getMaximumSpeedRate()){
+                return false;
+            }
+            currentIndex--;
+        }
+        return true;
     }
 
     private int getFirstTimeOfSticker (int sensorId, int currentTimeIndex ,long latestTime){
@@ -350,6 +376,7 @@ public class Model {
             speedLine.add(rawSpeed.elementAt(l));
             tempretureLine.add(rawTempreture.elementAt(l));
             castLengthLine.add(rawCastLength.elementAt(l));
+            speedRate.add((rawSpeed.elementAt(l) - rawSpeed.elementAt(j)) / (rawTime.elementAt(l) - rawTime.elementAt(j)));
 
             tempretureRate.add(new double[SENSORS_COUNT]);
             for (int i = 0; i < SENSORS_COUNT; i++) {

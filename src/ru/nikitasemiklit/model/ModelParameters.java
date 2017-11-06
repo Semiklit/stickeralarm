@@ -7,7 +7,7 @@ public class ModelParameters {
     private final double minimumFallingRate;
     private final double maximumFallingRate;
     private final int minimumTempreture;
-    private final int maximumTeptreture;
+    private final int maximumTempreture;
     private final int minimumDurationTempRise;
     private final int maximumDurationTempRise;
     private final int minimumDurationTempFall;
@@ -16,15 +16,20 @@ public class ModelParameters {
     private final int abnormalInterval;
     private final int abnormalStickerAlarm;
     private final int abnormalStickerWarning;
+    private final int minimumCastLentgh;
+    private final double minimumSpeed;
+    private final double maximumSpeedRate;
+    private final long timeForAlarmChecking;
+    private final long minimumTimeSinceLastAlarmDetected;
 
-    public ModelParameters(int intervalForCalculatingSec, double minimumRisingRate, double maximumRisingRate, double minimumFallingRate, double maximumFallingRate, int minimumTempreture, int maximumTeptreture, int minimumDurationTempRise, int maximumDurationTempRise, int minimumDurationTempFall, double minimumRatioStickerSpeedToCastingSpeed, double maximumRatioStickerSpeedToCastingSpeed, int abnormalInterval, int abnormalStickerAlarm, int abnormalStickerWarning) {
+    public ModelParameters(int intervalForCalculatingSec, double minimumRisingRate, double maximumRisingRate, double minimumFallingRate, double maximumFallingRate, int minimumTempreture, int maximumTempreture, int minimumDurationTempRise, int maximumDurationTempRise, int minimumDurationTempFall, double minimumRatioStickerSpeedToCastingSpeed, double maximumRatioStickerSpeedToCastingSpeed, int abnormalInterval, int abnormalStickerAlarm, int abnormalStickerWarning, int minimumCastLentgh, double minimumSpeed, double maximumSpeedRate, long timeForAlarmChecking, long minimumTimeSinceLastAlarmDetected) {
         this.intervalForCalculatingSec = intervalForCalculatingSec;
         this.minimumRisingRate = minimumRisingRate;
         this.maximumRisingRate = maximumRisingRate;
         this.minimumFallingRate = minimumFallingRate;
         this.maximumFallingRate = maximumFallingRate;
         this.minimumTempreture = minimumTempreture;
-        this.maximumTeptreture = maximumTeptreture;
+        this.maximumTempreture = maximumTempreture;
         this.minimumDurationTempRise = minimumDurationTempRise;
         this.maximumDurationTempRise = maximumDurationTempRise;
         this.minimumDurationTempFall = minimumDurationTempFall;
@@ -33,6 +38,11 @@ public class ModelParameters {
         this.abnormalInterval = abnormalInterval;
         this.abnormalStickerAlarm = abnormalStickerAlarm;
         this.abnormalStickerWarning = abnormalStickerWarning;
+        this.minimumCastLentgh = minimumCastLentgh;
+        this.minimumSpeed = minimumSpeed;
+        this.maximumSpeedRate = maximumSpeedRate;
+        this.timeForAlarmChecking = timeForAlarmChecking;
+        this.minimumTimeSinceLastAlarmDetected = minimumTimeSinceLastAlarmDetected;
     }
 
     public ModelParameters(){
@@ -42,7 +52,7 @@ public class ModelParameters {
         minimumFallingRate = -0.17;
         maximumFallingRate = -2.0;
         minimumTempreture = 50;
-        maximumTeptreture = 200;
+        maximumTempreture = 200;
         minimumDurationTempRise = 3;
         maximumDurationTempRise = 25;
         minimumDurationTempFall = 5;
@@ -51,65 +61,92 @@ public class ModelParameters {
         abnormalInterval = 30;
         abnormalStickerAlarm = 6;
         abnormalStickerWarning = 3;
+        minimumCastLentgh = 3;
+        minimumSpeed = 0.5;
+        maximumSpeedRate = 0.006;
+        timeForAlarmChecking = 120;
+        minimumTimeSinceLastAlarmDetected = 60;
+
     }
 
     public int getIntervalForCalculatingSec() {
         return intervalForCalculatingSec;
     }
 
-    double getMinimumRisingRate() {
+    public double getMinimumRisingRate() {
         return minimumRisingRate;
     }
 
-    double getMaximumRisingRate() {
+    public double getMaximumRisingRate() {
         return maximumRisingRate;
+
     }
 
-    double getMinimumFallingRate() {
+    public double getMinimumFallingRate() {
         return minimumFallingRate;
     }
 
-    double getMaximumFallingRate() {
+    public double getMaximumFallingRate() {
         return maximumFallingRate;
     }
 
-    int getMinimumTempreture() {
+    public int getMinimumTempreture() {
         return minimumTempreture;
     }
 
-    int getMaximumTeptreture() {
-        return maximumTeptreture;
+    public int getMaximumTempreture() {
+        return maximumTempreture;
     }
 
-    int getMinimumDurationTempRise() {
+    public int getMinimumDurationTempRise() {
         return minimumDurationTempRise;
     }
 
-    int getMaximumDurationTempRise() {
+    public int getMaximumDurationTempRise() {
         return maximumDurationTempRise;
     }
 
-    int getMinimumDurationTempFall() {
+    public int getMinimumDurationTempFall() {
         return minimumDurationTempFall;
     }
 
-    double getMinimumRatioStickerSpeedToCastingSpeed() {
+    public double getMinimumRatioStickerSpeedToCastingSpeed() {
         return minimumRatioStickerSpeedToCastingSpeed;
     }
 
-    double getMaximumRatioStickerSpeedToCastingSpeed() {
+    public double getMaximumRatioStickerSpeedToCastingSpeed() {
         return maximumRatioStickerSpeedToCastingSpeed;
     }
 
-    int getAbnormalInterval() {
+    public int getAbnormalInterval() {
         return abnormalInterval;
     }
 
-    int getAbnormalStickerAlarm() {
+    public int getAbnormalStickerAlarm() {
         return abnormalStickerAlarm;
     }
 
-    int getAbnormalStickerWarning() {
+    public int getAbnormalStickerWarning() {
         return abnormalStickerWarning;
+    }
+
+    public int getMinimumCastLentgh() {
+        return minimumCastLentgh;
+    }
+
+    public double getMinimumSpeed() {
+        return minimumSpeed;
+    }
+
+    public double getMaximumSpeedRate() {
+        return maximumSpeedRate;
+    }
+
+    public long getTimeForAlarmChecking() {
+        return timeForAlarmChecking;
+    }
+
+    public long getMinimumTimeSinceLastAlarmDetected() {
+        return minimumTimeSinceLastAlarmDetected;
     }
 }
