@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_stickeralarm" default="compile.module.stickeralarm">
+  <dirname property="module.stickeralarm.basedir" file="${ant.file.module_stickeralarm}"/>
+  
+  <property name="module.jdk.home.stickeralarm" value="${project.jdk.home}"/>
+  <property name="module.jdk.bin.stickeralarm" value="${project.jdk.bin}"/>
+  <property name="module.jdk.classpath.stickeralarm" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.stickeralarm" value="-encoding UTF-8 -source 1.8 -target 1.8 ${compiler.args}"/>
+  
+  <property name="stickeralarm.output.dir" value="${module.stickeralarm.basedir}/out/production/StickerAlarm"/>
+  <property name="stickeralarm.testoutput.dir" value="${module.stickeralarm.basedir}/out/test/StickerAlarm"/>
+  
+  <path id="stickeralarm.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="stickeralarm.module.production.classpath">
+    <path refid="${module.jdk.classpath.stickeralarm}"/>
+  </path>
+  
+  <path id="stickeralarm.runtime.production.module.classpath">
+    <pathelement location="${stickeralarm.output.dir}"/>
+  </path>
+  
+  <path id="stickeralarm.module.classpath">
+    <path refid="${module.jdk.classpath.stickeralarm}"/>
+    <pathelement location="${stickeralarm.output.dir}"/>
+  </path>
+  
+  <path id="stickeralarm.runtime.module.classpath">
+    <pathelement location="${stickeralarm.testoutput.dir}"/>
+    <pathelement location="${stickeralarm.output.dir}"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.stickeralarm">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.stickeralarm">
+    <patternset refid="excluded.from.module.stickeralarm"/>
+  </patternset>
+  
+  <path id="stickeralarm.module.sourcepath">
+    <dirset dir="${module.stickeralarm.basedir}">
+      <include name="src"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.stickeralarm" depends="compile.module.stickeralarm.production,compile.module.stickeralarm.tests" description="Compile module StickerAlarm"/>
+  
+  <target name="compile.module.stickeralarm.production" depends="register.custom.compilers" description="Compile module StickerAlarm; production classes">
+    <mkdir dir="${stickeralarm.output.dir}"/>
+    <javac2 destdir="${stickeralarm.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.stickeralarm}/javac">
+      <compilerarg line="${compiler.args.stickeralarm}"/>
+      <bootclasspath refid="stickeralarm.module.bootclasspath"/>
+      <classpath refid="stickeralarm.module.production.classpath"/>
+      <src refid="stickeralarm.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.stickeralarm"/>
+    </javac2>
+    
+    <copy todir="${stickeralarm.output.dir}">
+      <fileset dir="${module.stickeralarm.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.stickeralarm.tests" depends="register.custom.compilers,compile.module.stickeralarm.production" description="compile module StickerAlarm; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.stickeralarm" description="cleanup module">
+    <delete dir="${stickeralarm.output.dir}"/>
+    <delete dir="${stickeralarm.testoutput.dir}"/>
+  </target>
+</project>
