@@ -5,6 +5,7 @@
       <element id="module-output" name="StickerAlarm" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/knowm/xchart/xchart/3.5.0/xchart-3.5.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/de/erichseifert/vectorgraphics2d/VectorGraphics2D/0.11/VectorGraphics2D-0.11.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/google/code/gson/gson/2.8.2/gson-2.8.2.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

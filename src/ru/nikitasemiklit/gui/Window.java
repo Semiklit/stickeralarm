@@ -1,7 +1,6 @@
 package ru.nikitasemiklit.gui;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import org.knowm.xchart.*;
 import ru.nikitasemiklit.enums.TYPE_DATA_TO_DRAW;
@@ -17,7 +16,7 @@ import java.text.ParseException;
 
 public class Window extends JFrame {
 
-    private final String CONFIG_FILE = "Config.json";
+    private static final String CONFIG_FILE = "Config.json";
 
     private long timeFrom;
     private long timeTo;
@@ -29,25 +28,25 @@ public class Window extends JFrame {
 
     private File dir = null;
 
-    private static final JButton countButton = new JButton("Пересчитать");
-    private static final JButton openFileButton = new JButton("Открыть файл");
-    private static final JButton saveChartButton = new JButton("Сохранить график");
-    private static final JButton countCriticalSensorsButton = new JButton("Применить");
-    private static final JButton saveConfigurationButton = new JButton("Сохранить конфигурацию");
-    private static final JButton resetConfigurationButton = new JButton("Сбросить");
+    private static final JButton countButton = new JButton("Repaint");
+    private static final JButton openFileButton = new JButton("Open file");
+    private static final JButton saveChartButton = new JButton("Save chart");
+    private static final JButton countCriticalSensorsButton = new JButton("Find");
+    private static final JButton saveConfigurationButton = new JButton("Save configuration");
+    private static final JButton resetConfigurationButton = new JButton("Reset defaults");
 
-    private static final JLabel statusLabel = new JLabel("Статус");
-    private static final JLabel filePathLabel = new JLabel("Путь к файлу");
-    private static final JLabel timeStartLabel = new JLabel("Время начала графика в секундах (необязательно)");
-    private static final JLabel timeFinishLabel = new JLabel("Время окончания графика в секундах (необязательно)");
-    private static final JLabel dataLabel = new JLabel("Данные для вывода (номера датчиков или столбцов через пробел)");
+    private static final JLabel statusLabel = new JLabel("Status");
+    private static final JLabel filePathLabel = new JLabel("File path");
+    private static final JLabel timeStartLabel = new JLabel("Chart beginning in secs (unnecessary)");
+    private static final JLabel timeFinishLabel = new JLabel("Chart end in secs (unnecessary)");
+    private static final JLabel dataLabel = new JLabel("Data to draw (numbers of sensors or columns separated by spaces)");
     private static final JLabel intervalForCalculatingSecLabel = new JLabel ("Interval for calculating temperature change rate");
     private static final JLabel minimumRisingRateLabel = new JLabel("Minimum temperature rising rate");
     private static final JLabel maximumRisingRateLabel = new JLabel("Maximum temperature rising rate");
     private static final JLabel minimumFallingRateLabel = new JLabel("Maximum temperature falling rate");
     private static final JLabel maximumFallingRateLabel = new JLabel("Minimum temperature falling rate");
-    private static final JLabel minimumTempretureLabel = new JLabel("Minimum temperature");
-    private static final JLabel maximumTeptretureLabel = new JLabel("Maximum temperature");
+    private static final JLabel minimumTemperatureLabel = new JLabel("Minimum temperature");
+    private static final JLabel maximumTemperatureLabel = new JLabel("Maximum temperature");
     private static final JLabel minimumDurationTempRiseLabel = new JLabel("Minimum duration for abnormal temperature rise");
     private static final JLabel maximumDurationTempRiseLabel = new JLabel("Maximum duration for abnormal temperature rise");
     private static final JLabel minimumDurationTempFallLabel = new JLabel("Minimum duration for abnormal temperature fall");
@@ -76,8 +75,8 @@ public class Window extends JFrame {
     private static final JTextField maximumRisingRateField = new JTextField();
     private static final JTextField minimumFallingRateField = new JTextField();
     private static final JTextField maximumFallingRateField = new JTextField();
-    private static final JTextField minimumTempretureField = new JTextField();
-    private static final JTextField maximumTeptretureField = new JTextField();
+    private static final JTextField minimumTemperatureField = new JTextField();
+    private static final JTextField maximumTemperatureField = new JTextField();
     private static final JTextField minimumDurationTempRiseField = new JTextField();
     private static final JTextField maximumDurationTempRiseField = new JTextField();
     private static final JTextField minimumDurationTempFallField = new JTextField();
@@ -92,10 +91,10 @@ public class Window extends JFrame {
     private static final JTextField timeForAlarmCheckingField = new JTextField();
     private static final JTextField minimumTimeSinceLastAlarmDetectedField = new JTextField();
 
-    private static final JCheckBox speedLineCheckBox = new JCheckBox("Отображать скорость", true);
+    private static final JCheckBox speedLineCheckBox = new JCheckBox("Speed line", true);
 
 
-    private static XYChart chart = new XYChartBuilder().title("Let's search some stickers").xAxisTitle("Time").yAxisTitle("Tempreture Rate").build();
+    private static XYChart chart = new XYChartBuilder().title("Let's search some stickers").xAxisTitle("Time").yAxisTitle("Temperature Rate").build();
 
 
     public Window (String title){
@@ -112,15 +111,15 @@ public class Window extends JFrame {
         Container bottomArea = new Container();
         bottomArea.setLayout(new GridLayout());
 
-        Container dataControllArea = new Container();
-        dataControllArea.setLayout(new BoxLayout(dataControllArea, BoxLayout.Y_AXIS));
-        dataControllArea.add(filePathLabel);
-        dataControllArea.add(filePathField);
-        dataControllArea.add(openFileButton);
-        dataControllArea.add(timeStartLabel);
-        dataControllArea.add(timeFromField);
-        dataControllArea.add(timeFinishLabel);
-        dataControllArea.add(timeToField);
+        Container dataControlArea = new Container();
+        dataControlArea.setLayout(new BoxLayout(dataControlArea, BoxLayout.Y_AXIS));
+        dataControlArea.add(filePathLabel);
+        dataControlArea.add(filePathField);
+        dataControlArea.add(openFileButton);
+        dataControlArea.add(timeStartLabel);
+        dataControlArea.add(timeFromField);
+        dataControlArea.add(timeFinishLabel);
+        dataControlArea.add(timeToField);
 
         openFileButton.addActionListener(new AbstractAction() {
             @Override
@@ -141,10 +140,10 @@ public class Window extends JFrame {
                         timeToField.setText((model.getLastTime()).toString());
                     }
                     catch (ParseException ex){
-                        statusLabel.setText("Неверный файл");
+                        statusLabel.setText("Invalid file");
                     }
                     catch (IOException ex){
-                        statusLabel.setText("Ошибка чтения файла");
+                        statusLabel.setText("Unable to read file");
                     }
                 }
             }
@@ -154,79 +153,79 @@ public class Window extends JFrame {
         radioGroup.add(drawBySensors);
         radioGroup.add(drawByColumn);
         radioGroup.add(drawByLine);
-        dataControllArea.add(drawBySensors);
-        dataControllArea.add(drawByColumn);
-        dataControllArea.add(drawByLine);
+        dataControlArea.add(drawBySensors);
+        dataControlArea.add(drawByColumn);
+        dataControlArea.add(drawByLine);
         drawByColumn.setSelected(true);
-        dataControllArea.add(speedLineCheckBox);
-        dataControllArea.add(dataLabel);
-        dataControllArea.add(dataToDrawField);
-        dataControllArea.add(countButton);
-        dataControllArea.add(saveChartButton);
+        dataControlArea.add(speedLineCheckBox);
+        dataControlArea.add(dataLabel);
+        dataControlArea.add(dataToDrawField);
+        dataControlArea.add(countButton);
+        dataControlArea.add(saveChartButton);
 
 
-        Container calculationControllArea = new Container();
-        calculationControllArea.setLayout(new BoxLayout(calculationControllArea, BoxLayout.Y_AXIS));
-        calculationControllArea.add(intervalForCalculatingSecLabel);
-        calculationControllArea.add(intervalForCalculatingSecField);
-        calculationControllArea.add(minimumRisingRateLabel);
-        calculationControllArea.add(minimumRisingRateField);
-        calculationControllArea.add(maximumRisingRateLabel);
-        calculationControllArea.add(maximumRisingRateField);
-        calculationControllArea.add(minimumFallingRateLabel);
-        calculationControllArea.add(minimumFallingRateField);
-        calculationControllArea.add(maximumFallingRateLabel);
-        calculationControllArea.add(maximumFallingRateField);
-        calculationControllArea.add(minimumTempretureLabel);
-        calculationControllArea.add(minimumTempretureField);
-        calculationControllArea.add(maximumTeptretureLabel);
-        calculationControllArea.add(maximumTeptretureField);
-        calculationControllArea.add(minimumDurationTempRiseLabel);
-        calculationControllArea.add(minimumDurationTempRiseField);
-        calculationControllArea.add(countCriticalSensorsButton);
+        Container calculationControlArea = new Container();
+        calculationControlArea.setLayout(new BoxLayout(calculationControlArea, BoxLayout.Y_AXIS));
+        calculationControlArea.add(intervalForCalculatingSecLabel);
+        calculationControlArea.add(intervalForCalculatingSecField);
+        calculationControlArea.add(minimumRisingRateLabel);
+        calculationControlArea.add(minimumRisingRateField);
+        calculationControlArea.add(maximumRisingRateLabel);
+        calculationControlArea.add(maximumRisingRateField);
+        calculationControlArea.add(minimumFallingRateLabel);
+        calculationControlArea.add(minimumFallingRateField);
+        calculationControlArea.add(maximumFallingRateLabel);
+        calculationControlArea.add(maximumFallingRateField);
+        calculationControlArea.add(minimumTemperatureLabel);
+        calculationControlArea.add(minimumTemperatureField);
+        calculationControlArea.add(maximumTemperatureLabel);
+        calculationControlArea.add(maximumTemperatureField);
+        calculationControlArea.add(minimumDurationTempRiseLabel);
+        calculationControlArea.add(minimumDurationTempRiseField);
+        calculationControlArea.add(countCriticalSensorsButton);
 
-        Container calculationSecondControllArea = new Container();
-        calculationSecondControllArea.setLayout(new BoxLayout(calculationSecondControllArea, BoxLayout.Y_AXIS));
-        calculationSecondControllArea.add(maximumDurationTempRiseLabel);
-        calculationSecondControllArea.add(maximumDurationTempRiseField);
-        calculationSecondControllArea.add(minimumDurationTempFallLabel);
-        calculationSecondControllArea.add(minimumDurationTempFallField);
-        calculationSecondControllArea.add(minimumRatioStickerSpeedToCastingSpeedLabel);
-        calculationSecondControllArea.add(minimumRatioStickerSpeedToCastingSpeedField);
-        calculationSecondControllArea.add(maximumRatioStickerSpeedToCastingSpeedLabel);
-        calculationSecondControllArea.add(maximumRatioStickerSpeedToCastingSpeedField);
-        calculationSecondControllArea.add(abnormalIntervalLabel);
-        calculationSecondControllArea.add(abnormalIntervalField);
-        calculationSecondControllArea.add(abnormalStickerAlarmLabel);
-        calculationSecondControllArea.add(abnormalStickerAlarmField);
-        calculationSecondControllArea.add(abnormalStickerWarningLabel);
-        calculationSecondControllArea.add(abnormalStickerWarningField);
-        calculationSecondControllArea.add(saveConfigurationButton);
+        Container calculationSecondControlArea = new Container();
+        calculationSecondControlArea.setLayout(new BoxLayout(calculationSecondControlArea, BoxLayout.Y_AXIS));
+        calculationSecondControlArea.add(maximumDurationTempRiseLabel);
+        calculationSecondControlArea.add(maximumDurationTempRiseField);
+        calculationSecondControlArea.add(minimumDurationTempFallLabel);
+        calculationSecondControlArea.add(minimumDurationTempFallField);
+        calculationSecondControlArea.add(minimumRatioStickerSpeedToCastingSpeedLabel);
+        calculationSecondControlArea.add(minimumRatioStickerSpeedToCastingSpeedField);
+        calculationSecondControlArea.add(maximumRatioStickerSpeedToCastingSpeedLabel);
+        calculationSecondControlArea.add(maximumRatioStickerSpeedToCastingSpeedField);
+        calculationSecondControlArea.add(abnormalIntervalLabel);
+        calculationSecondControlArea.add(abnormalIntervalField);
+        calculationSecondControlArea.add(abnormalStickerAlarmLabel);
+        calculationSecondControlArea.add(abnormalStickerAlarmField);
+        calculationSecondControlArea.add(abnormalStickerWarningLabel);
+        calculationSecondControlArea.add(abnormalStickerWarningField);
+        calculationSecondControlArea.add(saveConfigurationButton);
 
-        Container alarmCheckingControllArea = new Container();
-        alarmCheckingControllArea.setLayout(new BoxLayout(alarmCheckingControllArea, BoxLayout.Y_AXIS));
-        alarmCheckingControllArea.add(minimumCastLentghLabel);
-        alarmCheckingControllArea.add(minimumCastLentghField);
-        alarmCheckingControllArea.add(minimumSpeedLabel);
-        alarmCheckingControllArea.add(minimumSpeedField);
-        alarmCheckingControllArea.add(maximumSpeedRateLabel);
-        alarmCheckingControllArea.add(maximumSpeedRateField);
-        alarmCheckingControllArea.add(timeForAlarmCheckingLabel);
-        alarmCheckingControllArea.add(timeForAlarmCheckingField);
-        alarmCheckingControllArea.add(minimumTimeSinceLastAlarmDetectedLabel);
-        alarmCheckingControllArea.add(minimumTimeSinceLastAlarmDetectedField);
-        alarmCheckingControllArea.add(resetConfigurationButton);
+        Container alarmCheckingControlArea = new Container();
+        alarmCheckingControlArea.setLayout(new BoxLayout(alarmCheckingControlArea, BoxLayout.Y_AXIS));
+        alarmCheckingControlArea.add(minimumCastLentghLabel);
+        alarmCheckingControlArea.add(minimumCastLentghField);
+        alarmCheckingControlArea.add(minimumSpeedLabel);
+        alarmCheckingControlArea.add(minimumSpeedField);
+        alarmCheckingControlArea.add(maximumSpeedRateLabel);
+        alarmCheckingControlArea.add(maximumSpeedRateField);
+        alarmCheckingControlArea.add(timeForAlarmCheckingLabel);
+        alarmCheckingControlArea.add(timeForAlarmCheckingField);
+        alarmCheckingControlArea.add(minimumTimeSinceLastAlarmDetectedLabel);
+        alarmCheckingControlArea.add(minimumTimeSinceLastAlarmDetectedField);
+        alarmCheckingControlArea.add(resetConfigurationButton);
 
-        bottomArea.add(dataControllArea);
-        bottomArea.add(calculationControllArea);
-        bottomArea.add(calculationSecondControllArea);
-        bottomArea.add(alarmCheckingControllArea);
+        bottomArea.add(dataControlArea);
+        bottomArea.add(calculationControlArea);
+        bottomArea.add(calculationSecondControlArea);
+        bottomArea.add(alarmCheckingControlArea);
         workArea.add(bottomArea);
         mainContainer.add(workArea, BorderLayout.CENTER);
         mainContainer.add(statusLabel, BorderLayout.SOUTH);
 
         try {
-            Gson gson = new GsonBuilder().create();
+            Gson gson = new Gson();
             JsonReader reader = new JsonReader(new FileReader(CONFIG_FILE));
             modelParameters = gson.fromJson(reader, ModelParameters.class);
         } catch (FileNotFoundException ex){
@@ -266,7 +265,7 @@ public class Window extends JFrame {
                 chart = model.getChart(timeFrom, timeTo, dataToDrawField.getText(), speedLineCheckBox.isSelected(), draw);
                 workArea.remove(0);
                 workArea.add(new XChartPanel<>(chart), 0);
-                statusLabel.setText("Обновлено " + System.currentTimeMillis());
+                statusLabel.setText("Updated at " + System.currentTimeMillis());
             }
         });
 
@@ -275,6 +274,7 @@ public class Window extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 try {
                     String fileName = filePathField.getText();
+
                     if (drawByColumn.isSelected()){
                         fileName += " columns";
                     }
@@ -282,14 +282,14 @@ public class Window extends JFrame {
                         fileName += " lines";
                     }
                     if (drawBySensors.isSelected()){
-                        fileName += " rawTempreture";
+                        fileName += " rawTemperature";
                     }
                     fileName += " " + dataToDrawField.getText();
                     fileName += " " + timeFrom;
                     fileName += " " + timeTo;
                     BitmapEncoder.saveBitmapWithDPI(chart, fileName, BitmapEncoder.BitmapFormat.PNG, 100);
                 } catch (IOException ex){
-                    statusLabel.setText("Ошибка создания файла");
+                    statusLabel.setText("Unable to create bitmap file");
                 }
             }
         });
@@ -297,14 +297,14 @@ public class Window extends JFrame {
         saveConfigurationButton.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Gson gson = new GsonBuilder().create();
+                Gson gson = new Gson();
                 recountModelParameters();
                 try(Writer writer = new BufferedWriter(new OutputStreamWriter(
                         new FileOutputStream(CONFIG_FILE), "utf-8"))){
                     writer.write(gson.toJson(modelParameters));
                 }
                 catch (IOException ex){
-                    System.out.println("Ошибка записи файла конфигурации");
+                    System.out.println("Unable to write configuration file");
                 }
             }
         });
@@ -325,8 +325,8 @@ public class Window extends JFrame {
         double maximumRisingRate = Double.parseDouble(maximumRisingRateField.getText());
         double minimumFallingRate = Double.parseDouble(minimumFallingRateField.getText());
         double maximumFallingRate = Double.parseDouble(maximumFallingRateField.getText());
-        int minimumTempreture = Integer.parseInt(minimumTempretureField.getText());
-        int maximumTeptreture = Integer.parseInt(maximumTeptretureField.getText());
+        int minimumTemperature = Integer.parseInt(minimumTemperatureField.getText());
+        int maximumTemperature = Integer.parseInt(maximumTemperatureField.getText());
         int minimumDurationTempRise = Integer.parseInt(minimumDurationTempRiseField.getText());
         int maximumDurationTempRise = Integer.parseInt(maximumDurationTempRiseField.getText());
         int minimumDurationTempFall = Integer.parseInt(minimumDurationTempFallField.getText());
@@ -340,7 +340,7 @@ public class Window extends JFrame {
         double maximumSpeedRate = Double.parseDouble(maximumSpeedRateField.getText());
         long timeForAlarmChecking = Long.parseLong(timeForAlarmCheckingField.getText());
         long minimumTimeSinceLastAlarmDetected = Long.parseLong(minimumTimeSinceLastAlarmDetectedField.getText());
-        modelParameters = new ModelParameters(intervalForCalculatingSec, minimumRisingRate, maximumRisingRate, minimumFallingRate, maximumFallingRate, minimumTempreture, maximumTeptreture,
+        modelParameters = new ModelParameters(intervalForCalculatingSec, minimumRisingRate, maximumRisingRate, minimumFallingRate, maximumFallingRate, minimumTemperature, maximumTemperature,
                 minimumDurationTempRise, maximumDurationTempRise, minimumDurationTempFall, minimumRatioStickerSpeedToCastingSpeed, maximumRatioStickerSpeedToCastingSpeed, abnormalInterval,
                 abnormalStickerAlarm, abnormalStickerWarning, minimumCastLentgh, minimumSpeed, maximumSpeedRate, timeForAlarmChecking, minimumTimeSinceLastAlarmDetected);
     }
@@ -351,8 +351,8 @@ public class Window extends JFrame {
         maximumRisingRateField.setText(Double.toString(modelParameters.getMaximumRisingRate()));
         minimumFallingRateField.setText(Double.toString(modelParameters.getMinimumFallingRate()));
         maximumFallingRateField.setText(Double.toString(modelParameters.getMaximumFallingRate()));
-        minimumTempretureField.setText(Integer.toString(modelParameters.getMinimumTempreture()));
-        maximumTeptretureField.setText(Integer.toString(modelParameters.getMaximumTempreture()));
+        minimumTemperatureField.setText(Integer.toString(modelParameters.getMinimumTempreture()));
+        maximumTemperatureField.setText(Integer.toString(modelParameters.getMaximumTempreture()));
         minimumDurationTempRiseField.setText(Integer.toString(modelParameters.getMinimumDurationTempRise()));
         maximumDurationTempRiseField.setText(Integer.toString(modelParameters.getMaximumDurationTempRise()));
         minimumDurationTempFallField.setText(Integer.toString(modelParameters.getMinimumDurationTempFall()));
