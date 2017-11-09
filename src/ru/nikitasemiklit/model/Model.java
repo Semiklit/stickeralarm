@@ -8,6 +8,8 @@ import ru.nikitasemiklit.gui.ResultPane;
 import ru.nikitasemiklit.enums.TYPE_DATA_TO_DRAW;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Vector;
 
@@ -31,6 +33,7 @@ public class Model {
     private Vector<FallingSensor> fallingSensors = new Vector<>();
     private Vector<int[]> abnormalTCDeleted = new Vector<>();
 
+
     private long lastDetectedAlarmTime = 0;
 
     private Model(Vector<Long> timeLine, Vector<Double> speedLine, Vector<Double> speedRate , Vector<Double> castLengthLine, Vector<double[]> temperatureLine, Vector<double[]> temperatureRate) {
@@ -42,13 +45,25 @@ public class Model {
         this.temperatureRate = temperatureRate;
     }
 
-    public void countCriticalSensors (ModelParameters modelParameters) {
+    public void smooth (double alpha){
+        for (int i = 0; i<SENSORS_COUNT; i++) {
+            for (int j = 1; j < temperatureRate.size(); j++) {
+                temperatureRate.elementAt(j)[i] = temperatureRate.elementAt(j)[i] * alpha + temperatureRate.elementAt(j-1)[i] * (1 - alpha);
+            }
+        }
+    }
+
+    public int countCriticalSensors (ModelParameters modelParameters, boolean showResults) {
+
+        Map<Long, Integer> markedSensors = new HashMap<>();
 
         risingSensors.clear();
         fallingSensors.clear();
         temperatureRiseDetected.clear();
         temperatureFallDetected.clear();
         abnormalTCDeleted.clear();
+
+        lastDetectedAlarmTime = 0;
 
         temperatureRate.forEach(el -> {
             temperatureRiseDetected.add(new short[SENSORS_COUNT]);
@@ -117,11 +132,11 @@ public class Model {
         risingSensors.forEach(risingSensor -> resultStringBuilder.append(risingSensor.toString() + "\n"));
 
         fallingSensors.forEach(fallingSensor -> resultStringBuilder.append(fallingSensor.toString() + "\n"));
-
-        ResultPane rs = new ResultPane("Output", resultStringBuilder.toString());
-        rs.pack();
-        rs.setVisible(true);
-
+        if (showResults) {
+            ResultPane rs = new ResultPane("Output", resultStringBuilder.toString());
+            rs.pack();
+            rs.setVisible(true);
+        }
 
         //вычисление скоростей стикеров
         for (int i = 0; i < SENSORS_COUNT; i++) {
@@ -135,11 +150,11 @@ public class Model {
 
                     //подсчет количества сработавших датчиков в предшествующий период
                     getFirstTimeOfSticker(i, currentIndex, latestTime, stickerInfo);
-                    int sensorsCount = stickerInfo.getSensorsWithStickersCount() + 1;
+                    int sensorsCount = stickerInfo.getSensorsWithStickersCount();
                     //если скорость распротранения удовлетворяет условию
                     if (stickerInfo.getFirstTimeOfSticker() != timeLine.elementAt(currentIndex)) {
                         double castSpeed = speedLine.elementAt(currentIndex);
-                        double stickerSpeed = 60 * sensorsCount * DISTANCE_BETWEEN_SENSORS / (timeLine.elementAt(currentIndex) - stickerInfo.getFirstTimeOfSticker());
+                        double stickerSpeed = 60 * (sensorsCount + 1) * DISTANCE_BETWEEN_SENSORS / (timeLine.elementAt(currentIndex) - stickerInfo.getFirstTimeOfSticker());
                         if (modelParameters.getMinimumRatioStickerSpeedToCastingSpeed() * castSpeed <= stickerSpeed && modelParameters.getMaximumRatioStickerSpeedToCastingSpeed() * castSpeed >= stickerSpeed) {
                             //проверяем, падала ли температура
                             boolean temperatureFall = false;
@@ -151,25 +166,14 @@ public class Model {
                             if (temperatureFall) {
                                 //все условия выполнены, записываем сработавшие датчики
                                 abnormalTCDeleted.elementAt(currentIndex)[coords[i] - 1] += sensorsCount;
+                                //записать номер датчика и время
+                                markedSensors.put(timeLine.elementAt(currentIndex), i);
                             }
                         }
                     }
                 }
             }
         }
-
-        /*StringBuilder abnormalTCDetectedString = new StringBuilder();
-
-        for (int[] el : abnormalTCDeleted){
-            for (int i = 0; i < el.length; i++){
-                abnormalTCDetectedString.append( el[i] + " ");
-            }
-            abnormalTCDetectedString.append("\n");
-        }
-
-        ResultPane abnormalTCDetetedPane = new ResultPane("Вывод", abnormalTCDetectedString.toString());
-        abnormalTCDetetedPane.pack();
-        abnormalTCDetetedPane.setVisible(true);*/
 
         StringBuilder algorithmResult = new StringBuilder();
 
@@ -178,24 +182,43 @@ public class Model {
                 if ((el [i + 1] >= 2) && (el[i] + el[i + 2] >= 1)){
                     //Проверяем условия отмены
                     boolean isAlarmPossible = checkAlarmPossibility(abnormalTCDeleted.indexOf(el), modelParameters);
-
                     if (el [i] + el[i + 1] + el[i + 2] >= modelParameters.getAbnormalStickerAlarm() && isAlarmPossible){
                         lastDetectedAlarmTime = timeLine.elementAt(abnormalTCDeleted.indexOf(el));
-                        algorithmResult.append("Sticker Alarm at " + timeLine.elementAt(abnormalTCDeleted.indexOf(el)) + " in " + coords[i + 1] + "\n");
-
+                        algorithmResult.append("Sticker Alarm at " + timeLine.elementAt(abnormalTCDeleted.indexOf(el)) + " in " + (i + 1) + " with following sensors: ");
+                        final int currentColumn = i + 1;
+                        markedSensors.forEach((time, index) -> {
+                            if ((time == lastDetectedAlarmTime) && (coords [index] == currentColumn)){
+                                algorithmResult.append(index + " ");
+                            }
+                        });
+                        algorithmResult.append("\n");
+                        if (!showResults){
+                            return 1;
+                        }
                     } else {
                         if (el [i] + el[i + 1] + el[i + 2] >= modelParameters.getAbnormalStickerWarning()){
-                            algorithmResult.append("Sticker Warning at " + timeLine.elementAt(abnormalTCDeleted.indexOf(el)) + " in " + coords[i + 1] + "\n");
+                            algorithmResult.append("Sticker Warning at " + timeLine.elementAt(abnormalTCDeleted.indexOf(el)) + " in " + (i + 1) + " with following sensors: ");
+                            final int currentColumn = i + 1;
+                            final long currentTime = timeLine.elementAt(abnormalTCDeleted.indexOf(el));
+                            markedSensors.forEach((time, index) -> {
+                                if ((time == currentTime) && (coords [index] == currentColumn)){
+                                    algorithmResult.append(index + " ");
+                                }
+                            });
+                            algorithmResult.append("\n");
                         }
                     }
                 }
             }
         }
 
-        ResultPane algorithmResultPane = new ResultPane("Output", algorithmResult.toString());
-        algorithmResultPane.pack();
-        algorithmResultPane.setVisible(true);
+        if (showResults) {
+            ResultPane algorithmResultPane = new ResultPane("Output", algorithmResult.toString());
+            algorithmResultPane.pack();
+            algorithmResultPane.setVisible(true);
+        }
 
+        return 0;
     }
 
     private boolean checkAlarmPossibility (int index, ModelParameters modelParameters){
@@ -263,20 +286,25 @@ public class Model {
         }
 
         int size = 0;
-        int firstElement = 0;
+        int firstElement = -1;
 
         for (Long tl : timeLine){
             if ((tl >= timeFrom) && (tl <= timeTo)) {
-                if (firstElement == 0){
+                if (firstElement == -1){
                     firstElement = timeLine.indexOf(tl);
                 }
                 size++;
             }
         }
 
+        if (firstElement == -1){
+            firstElement = 0;
+        }
+
         double [] xTime = new double[size];
-        for (int i = 0; i<size; i++){
-            xTime[i] = timeLine.elementAt(firstElement + i - 1);
+        for (int i = 0; i < size; i++){
+            xTime[i] = timeLine.elementAt(firstElement + i);
+
         }
 
 
@@ -316,7 +344,7 @@ public class Model {
         if (isSpeedLineToDraw) {
             double[] ySpeed = new double[size];
             for (int i = 0; i<size; i++){
-                ySpeed[i] = speedLine.elementAt(firstElement + i - 1);
+                ySpeed[i] = speedLine.elementAt(firstElement + i);
             }
 
             XYSeries series = chart.addSeries("Speed", xTime, ySpeed);
@@ -332,7 +360,7 @@ public class Model {
     private void addLineToChart(Vector<double[]> tempretureRate, XYChart chart, double[] xTime, int sensorId, int size, int firstElement) {
         double[] yData = new double[size];
         for (int i = 0; i<size; i++){
-            yData[i] = tempretureRate.elementAt(firstElement + i - 1)[sensorId];
+            yData[i] = tempretureRate.elementAt(firstElement + i)[sensorId];
         }
         XYSeries series = chart.addSeries("Sensor " + (sensorId + 1), xTime, yData);
         series.setLineWidth((float) 1);
@@ -369,7 +397,8 @@ public class Model {
             for (int i = 0; i < SENSORS_COUNT; i++) {
                 temperatureRate.lastElement()[i] = (rawTemperature.elementAt(l)[i] - rawTemperature.elementAt(j)[i]) / (rawTime.elementAt(l) - rawTime.elementAt(j));
             }
-            j = l;
+            //j = l;
+            j++;
             l = findTimeIndex(rawTime, j, intervalForCalculatingSec);
         }
 

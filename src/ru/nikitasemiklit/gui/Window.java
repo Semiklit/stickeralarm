@@ -3,6 +3,7 @@ package ru.nikitasemiklit.gui;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import org.knowm.xchart.*;
+import ru.nikitasemiklit.PackageMode;
 import ru.nikitasemiklit.enums.TYPE_DATA_TO_DRAW;
 import ru.nikitasemiklit.model.Model;
 import ru.nikitasemiklit.model.ModelParameters;
@@ -13,6 +14,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.*;
 import java.text.ParseException;
+import java.util.Map;
 
 public class Window extends JFrame {
 
@@ -34,6 +36,8 @@ public class Window extends JFrame {
     private static final JButton countCriticalSensorsButton = new JButton("Find");
     private static final JButton saveConfigurationButton = new JButton("Save configuration");
     private static final JButton resetConfigurationButton = new JButton("Reset defaults");
+    private static final JButton countForArrayFiles = new JButton("Package mode");
+    private static final JButton smoothButton = new JButton("Smooth chart");
 
     private static final JLabel statusLabel = new JLabel("Status");
     private static final JLabel filePathLabel = new JLabel("File path");
@@ -60,6 +64,8 @@ public class Window extends JFrame {
     private static final JLabel maximumSpeedRateLabel = new JLabel("Maximum speed rate before sticker");
     private static final JLabel timeForAlarmCheckingLabel = new JLabel("Time for checking alarm");
     private static final JLabel minimumTimeSinceLastAlarmDetectedLabel = new JLabel("Minimum time since last detected alarm");
+    private static final JLabel alphaLabel = new JLabel("Alpha");
+    private static final JLabel smoothLabel = new JLabel("Smooth count");
 
     private static final JTextField filePathField = new JTextField();
 
@@ -90,6 +96,8 @@ public class Window extends JFrame {
     private static final JTextField maximumSpeedRateField = new JTextField();
     private static final JTextField timeForAlarmCheckingField = new JTextField();
     private static final JTextField minimumTimeSinceLastAlarmDetectedField = new JTextField();
+    private static final JTextField alphaFiled = new JTextField("0.5");
+    private static final JTextField smoothField = new JTextField("1");
 
     private static final JCheckBox speedLineCheckBox = new JCheckBox("Speed line", true);
 
@@ -162,6 +170,7 @@ public class Window extends JFrame {
         dataControlArea.add(dataToDrawField);
         dataControlArea.add(countButton);
         dataControlArea.add(saveChartButton);
+        dataControlArea.add(smoothButton);
 
 
         Container calculationControlArea = new Container();
@@ -214,7 +223,12 @@ public class Window extends JFrame {
         alarmCheckingControlArea.add(timeForAlarmCheckingField);
         alarmCheckingControlArea.add(minimumTimeSinceLastAlarmDetectedLabel);
         alarmCheckingControlArea.add(minimumTimeSinceLastAlarmDetectedField);
+        alarmCheckingControlArea.add(alphaLabel);
+        alarmCheckingControlArea.add(alphaFiled);
+        alarmCheckingControlArea.add(smoothLabel);
+        alarmCheckingControlArea.add(smoothField);
         alarmCheckingControlArea.add(resetConfigurationButton);
+        alarmCheckingControlArea.add(countForArrayFiles);
 
         bottomArea.add(dataControlArea);
         bottomArea.add(calculationControlArea);
@@ -237,7 +251,7 @@ public class Window extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 recountModelParameters();
-                model.countCriticalSensors(modelParameters);
+                model.countCriticalSensors(modelParameters, true);
             }
         });
 
@@ -316,6 +330,46 @@ public class Window extends JFrame {
                 resetFields();
             }
         });
+
+        countForArrayFiles.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                recountModelParameters();
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                int ret = fileChooser.showDialog(null, "Открыть файл");
+                if (ret == JFileChooser.APPROVE_OPTION) {
+                    File file = fileChooser.getSelectedFile();
+                    System.out.println(file.getName());
+                    double alpha = Double.parseDouble(alphaFiled.getText());
+                    int smoothCount = Integer.parseInt(smoothField.getText());
+                    PackageMode packageMode = new PackageMode(file);
+                    Map<String, Integer> results = packageMode.run(modelParameters, alpha, smoothCount);
+                    StringBuilder stringBuilder = new StringBuilder();
+                    results.forEach((key, value) ->{
+                        stringBuilder.append (key + " ; " + value + "\n");
+                    });
+
+                    try (FileWriter fileWriter = new FileWriter ("output.csv", false)){
+
+                        fileWriter.write(stringBuilder.toString());
+                        System.out.println("Output file created");
+                        statusLabel.setText("Output file created");
+                    }catch (IOException ex){
+
+                    }
+                }
+            }
+        });
+
+        smoothButton.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                double alpha = Double.parseDouble(alphaFiled.getText());
+                model.smooth(alpha);
+            }
+        });
+
 
     }
 

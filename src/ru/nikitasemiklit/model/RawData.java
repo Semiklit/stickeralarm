@@ -71,6 +71,7 @@ public class RawData {
             }
         }
 
+        bufferedReader.close();
 
         return new RawData(rawTime, rawSpeed, rawCastLength, rawTemperature);
 
