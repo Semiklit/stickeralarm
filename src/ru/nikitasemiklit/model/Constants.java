@@ -3,6 +3,7 @@ package ru.nikitasemiklit.model;
 class Constants {
     static final int SENSORS_COUNT = 504;
     static final int COLUMNS_COUNT = 32;
+    static final int LINES_COUNT = 18;
     static final double DISTANCE_BETWEEN_SENSORS = 0.047;
     static final String COORDS_FILE = "SensorsCoordinates2.txt";
 

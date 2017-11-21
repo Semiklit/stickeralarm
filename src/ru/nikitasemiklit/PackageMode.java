@@ -34,7 +34,7 @@ public class PackageMode {
                 executor.submit(() -> {
                     System.out.println("parsing file " + path);
                     try {
-                        File currentFile = new File(file.getAbsolutePath() + "/" + path);
+                        File currentFile = new File(file.getAbsolutePath() + File.separator + path);
                         RawData rawData = RawData.parseFile(currentFile);
                         Model model = Model.countTempRate(rawData, modelParameters.getIntervalForCalculatingSec());
                         for (int i = 0; i< smoothCount; i++){
@@ -43,9 +43,9 @@ public class PackageMode {
                         int answer = model.countCriticalSensors(modelParameters, false);
                         results.put(currentFile.getName(), answer);
                     } catch (ParseException ex) {
-                        System.out.println("unable to parse: " + file.getAbsolutePath() + "/" + path);
+                        System.out.println("unable to parse: " + file.getAbsolutePath() + File.separator + path);
                     } catch (IOException ex) {
-                        System.out.println("unable to open: " + file.getAbsolutePath() + "/" + path);
+                        System.out.println("unable to open: " + file.getAbsolutePath() + File.separator + path);
                     } finally {
                         SYNC.countDown();
                     }

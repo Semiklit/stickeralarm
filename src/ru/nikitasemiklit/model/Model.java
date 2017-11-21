@@ -4,12 +4,11 @@ import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.XYSeries;
 import org.knowm.xchart.style.markers.SeriesMarkers;
+import ru.nikitasemiklit.enums.STATUS_ABORTING_ALARM;
 import ru.nikitasemiklit.gui.ResultPane;
 import ru.nikitasemiklit.enums.TYPE_DATA_TO_DRAW;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.Vector;
 
@@ -27,12 +26,13 @@ public class Model {
     private final Vector<double[]> temperatureLine;
     private final Vector<double[]> temperatureRate;
 
-    private Vector<short[]> temperatureRiseDetected = new Vector<>();
-    private Vector<short[]> temperatureFallDetected = new Vector<>();
-    private Vector<RisingSensor> risingSensors = new Vector<>();
-    private Vector<FallingSensor> fallingSensors = new Vector<>();
-    private Vector<int[]> abnormalTCDeleted = new Vector<>();
+    private final Vector<StickerInColumn[][]> abnormalTCDetectedMatrix = new Vector<>();
 
+    private final Vector<short[]> temperatureRiseDetected = new Vector<>();
+    private final Vector<short[]> temperatureFallDetected = new Vector<>();
+    //private final Vector<RisingSensor> risingSensors = new Vector<>();
+    //private final Vector<FallingSensor> fallingSensors = new Vector<>();
+    //private final Vector<int[]> abnormalTCDetected = new Vector<>();
 
     private long lastDetectedAlarmTime = 0;
 
@@ -55,20 +55,20 @@ public class Model {
 
     public int countCriticalSensors (ModelParameters modelParameters, boolean showResults) {
 
-        Map<Long, Integer> markedSensors = new HashMap<>();
-
-        risingSensors.clear();
-        fallingSensors.clear();
+        //risingSensors.clear();
+        //fallingSensors.clear();
         temperatureRiseDetected.clear();
         temperatureFallDetected.clear();
-        abnormalTCDeleted.clear();
+        //abnormalTCDetected.clear();
+        abnormalTCDetectedMatrix.clear();
 
         lastDetectedAlarmTime = 0;
 
         temperatureRate.forEach(el -> {
             temperatureRiseDetected.add(new short[SENSORS_COUNT]);
             temperatureFallDetected.add(new short[SENSORS_COUNT]);
-            abnormalTCDeleted.add(new int[COLUMNS_COUNT]);
+            //abnormalTCDetected.add(new int[COLUMNS_COUNT]);
+            abnormalTCDetectedMatrix.add(new StickerInColumn[COLUMNS_COUNT][LINES_COUNT]);
         });
 
         for (int i = 0; i < SENSORS_COUNT; i++) {
@@ -79,16 +79,23 @@ public class Model {
             long lastTimeFall = 0;
 
             for (double[] el : temperatureRate) {
-                //повышение температуры
-                if ((el[i] > modelParameters.getMinimumRisingRate() && el[i] < modelParameters.getMaximumRisingRate())) {
-                    if (firstTimeRise == 0) {
-                        firstTimeRise = timeLine.elementAt(temperatureRate.indexOf(el));
+                //ищем повышение температуры для каждого датчика
+                if (el[i] > modelParameters.getMinimumRisingRate()){
+                    if (el[i] < modelParameters.getMaximumRisingRate()) {
+                        //если начало повышения не записано, и температура ближе к минимуму, чем к максимуму
+                        if ((firstTimeRise == 0) && (el[i] - modelParameters.getMinimumRisingRate() < modelParameters.getMaximumRisingRate() - el[i])){
+                            firstTimeRise = timeLine.elementAt(temperatureRate.indexOf(el));
+                        }
+                        lastTimeRise = timeLine.elementAt(temperatureRate.indexOf(el));
+                    } else{
+                        firstTimeRise = 0;
+                        lastTimeRise = 0;
                     }
-                    lastTimeRise = timeLine.elementAt(temperatureRate.indexOf(el));
                 } else {
-                    if (lastTimeRise != 0) {
+                    if (lastTimeRise != 0 && firstTimeRise != 0) {
                         if ((lastTimeRise - firstTimeRise > modelParameters.getMinimumDurationTempRise()) && (lastTimeRise - firstTimeRise < modelParameters.getMaximumDurationTempRise())) {
-                            risingSensors.add(new RisingSensor(i, firstTimeRise, lastTimeRise));
+                            //risingSensors.add(new RisingSensor(i, firstTimeRise, lastTimeRise));
+                            //если повышение длилось необходимое время, записываем время его начала
                             temperatureRiseDetected.elementAt(timeLine.indexOf(firstTimeRise))[i] = 1;
                         }
                         firstTimeRise = 0;
@@ -96,16 +103,23 @@ public class Model {
                     }
                 }
 
-                //понижение температуры
-                if ((el[i] > modelParameters.getMaximumFallingRate() && el[i] < modelParameters.getMinimumFallingRate())) {
-                    if (firstTimeFall == 0) {
-                        firstTimeFall = timeLine.elementAt(temperatureRate.indexOf(el));
+                //ищем понижение температуры для каждого датчика
+                if (el[i] < modelParameters.getMinimumFallingRate()){
+                    if (el[i] > modelParameters.getMaximumFallingRate()) {
+                        if ((firstTimeFall == 0) && (el[i] - modelParameters.getMinimumFallingRate() > modelParameters.getMaximumFallingRate() - el[i])) {
+                            firstTimeFall = timeLine.elementAt(temperatureRate.indexOf(el));
+                        }
+                        lastTimeFall = timeLine.elementAt(temperatureRate.indexOf(el));
                     }
-                    lastTimeFall = timeLine.elementAt(temperatureRate.indexOf(el));
+                    else {
+                        firstTimeFall = 0;
+                        lastTimeFall = 0;
+                    }
                 } else {
-                    if (lastTimeFall != 0) {
+                    if (lastTimeFall != 0 && firstTimeFall != 0) {
                         if (lastTimeFall - firstTimeFall > modelParameters.getMinimumDurationTempFall()) {
-                            fallingSensors.add(new FallingSensor(i, firstTimeFall, lastTimeFall));
+                            //fallingSensors.add(new FallingSensor(i, firstTimeFall, lastTimeFall));
+                            //если понижение длилось необзодимое время, записываем его
                             temperatureFallDetected.elementAt(timeLine.indexOf(firstTimeFall))[i] = 1;
                         }
                         firstTimeFall = 0;
@@ -114,98 +128,111 @@ public class Model {
                 }
 
             }
-            if (lastTimeRise != 0) {
-                if ((lastTimeRise - firstTimeRise > modelParameters.getMinimumDurationTempRise()) && (lastTimeRise - firstTimeRise < modelParameters.getMaximumDurationTempRise())) {
-                    risingSensors.add(new RisingSensor(i, firstTimeRise, lastTimeRise));
-                }
-            }
-            if (lastTimeFall != 0) {
-                if (lastTimeFall - firstTimeFall > modelParameters.getMinimumDurationTempFall()) {
-                    fallingSensors.add(new FallingSensor(i, firstTimeFall, lastTimeFall));
-                }
-            }
-
         }
 
-        StringBuilder resultStringBuilder = new StringBuilder();
+      //  StringBuilder resultStringBuilder = new StringBuilder();
 
-        risingSensors.forEach(risingSensor -> resultStringBuilder.append(risingSensor.toString() + "\n"));
+      //  risingSensors.forEach(risingSensor -> resultStringBuilder.append(risingSensor.toString() + "\n"));
 
-        fallingSensors.forEach(fallingSensor -> resultStringBuilder.append(fallingSensor.toString() + "\n"));
-        if (showResults) {
-            ResultPane rs = new ResultPane("Output", resultStringBuilder.toString());
-            rs.pack();
-            rs.setVisible(true);
-        }
-
+      //  fallingSensors.forEach(fallingSensor -> resultStringBuilder.append(fallingSensor.toString() + "\n"));
+      //  if (showResults) {
+      //      ResultPane rs = new ResultPane("Output", resultStringBuilder.toString());
+      //      rs.pack();
+      //      rs.setVisible(true);
+      //  }
         //вычисление скоростей стикеров
         for (int i = 0; i < SENSORS_COUNT; i++) {
             for (short[] el : temperatureRiseDetected) {
                 //если датчик сработал
-                if (el[i] == 1) {
+                //if (el[i] == 1) {
                     int currentIndex = temperatureRiseDetected.indexOf(el);
                     long latestTime = timeLine.elementAt(currentIndex) - modelParameters.getAbnormalInterval();
 
-                    StickerInfo stickerInfo = new StickerInfo(timeLine.elementAt(currentIndex));
+                    StickerInColumn stickerInColumn = new StickerInColumn(timeLine.elementAt(currentIndex));
 
                     //подсчет количества сработавших датчиков в предшествующий период
-                    getFirstTimeOfSticker(i, currentIndex, latestTime, stickerInfo);
-                    int sensorsCount = stickerInfo.getSensorsWithStickersCount();
+                    getFirstTimeOfSticker(i, currentIndex, latestTime, stickerInColumn);
+                    int sensorsCount = stickerInColumn.getSensorsWithStickersCount();
                     //если скорость распротранения удовлетворяет условию
-                    if (stickerInfo.getFirstTimeOfSticker() != timeLine.elementAt(currentIndex)) {
-                        double castSpeed = speedLine.elementAt(currentIndex);
-                        double stickerSpeed = 60 * (sensorsCount + 1) * DISTANCE_BETWEEN_SENSORS / (timeLine.elementAt(currentIndex) - stickerInfo.getFirstTimeOfSticker());
-                        if (modelParameters.getMinimumRatioStickerSpeedToCastingSpeed() * castSpeed <= stickerSpeed && modelParameters.getMaximumRatioStickerSpeedToCastingSpeed() * castSpeed >= stickerSpeed) {
-                            //проверяем, падала ли температура
-                            boolean temperatureFall = false;
-                            for (int j = timeLine.indexOf(stickerInfo.getFirstTimeOfSticker()); j < currentIndex; j++) {
-                                if (temperatureFallDetected.elementAt(j)[i - sensorsCount] == 1) {
-                                    temperatureFall = true;
+                    if (sensorsCount != 0 ) {
+                        if (stickerInColumn.getFirstTimeOfSticker() != timeLine.elementAt(currentIndex)) {
+                            double castSpeed = speedLine.elementAt(currentIndex);
+                            double stickerSpeed = 60 * (sensorsCount + 1) * DISTANCE_BETWEEN_SENSORS / (timeLine.elementAt(currentIndex) - stickerInColumn.getFirstTimeOfSticker());
+                            if (modelParameters.getMinimumRatioStickerSpeedToCastingSpeed() * castSpeed <= stickerSpeed && modelParameters.getMaximumRatioStickerSpeedToCastingSpeed() * castSpeed >= stickerSpeed) {
+                                //проверяем, падала ли температура
+                                boolean temperatureFall = false;
+                                for (int j = timeLine.indexOf(stickerInColumn.getFirstTimeOfSticker()); j < currentIndex; j++) {
+                                    if (temperatureFallDetected.elementAt(j)[stickerInColumn.getFirstSensorWithSticker()] == 1) {
+                                        temperatureFall = true;
+                                    }
                                 }
-                            }
-                            if (temperatureFall) {
-                                //все условия выполнены, записываем сработавшие датчики
-                                abnormalTCDeleted.elementAt(currentIndex)[coords[i] - 1] += sensorsCount;
-                                //записать номер датчика и время
-                                markedSensors.put(timeLine.elementAt(currentIndex), i);
+                                if (temperatureFall) {
+                                    //все условия выполнены, записываем сработавшие датчики
+                                    //abnormalTCDetected.elementAt(currentIndex)[coords[i] - 1] += sensorsCount;
+                                    abnormalTCDetectedMatrix.elementAt(currentIndex) [coords[i] - 1][i / COLUMNS_COUNT] = stickerInColumn;
+                                }
                             }
                         }
                     }
-                }
+                    //if (abnormalTCDetectedMatrix.elementAt(currentIndex) [coords[i] - 1][i / COLUMNS_COUNT] == null){
+                    //    abnormalTCDetectedMatrix.elementAt(currentIndex) [coords[i] - 1][i / COLUMNS_COUNT] = new StickerInColumn();
+                    //}
+                //}
             }
         }
 
         StringBuilder algorithmResult = new StringBuilder();
 
-        for (int[] el : abnormalTCDeleted){
-            for (int i = 0; i < el.length - 2; i++){
-                if ((el [i + 1] >= 2) && (el[i] + el[i + 2] >= 1)){
-                    //Проверяем условия отмены
-                    boolean isAlarmPossible = checkAlarmPossibility(abnormalTCDeleted.indexOf(el), modelParameters);
-                    if (el [i] + el[i + 1] + el[i + 2] >= modelParameters.getAbnormalStickerAlarm() && isAlarmPossible){
-                        lastDetectedAlarmTime = timeLine.elementAt(abnormalTCDeleted.indexOf(el));
-                        algorithmResult.append("Sticker Alarm at " + timeLine.elementAt(abnormalTCDeleted.indexOf(el)) + " in " + (i + 1) + " with following sensors: ");
-                        final int currentColumn = i + 1;
-                        markedSensors.forEach((time, index) -> {
-                            if ((time == lastDetectedAlarmTime) && (coords [index] == currentColumn)){
-                                algorithmResult.append(index + " ");
-                            }
-                        });
-                        algorithmResult.append("\n");
-                        if (!showResults){
-                            return 1;
+        //for (int[] el : abnormalTCDetected){
+            //for (int i = 0; i < el.length - 2; i++){
+        for (StickerInColumn[][] el : abnormalTCDetectedMatrix){
+            for (int line = 1; line < LINES_COUNT; line++){
+                for (int column = 1; column < COLUMNS_COUNT - 1; column = getNextColumn(column)){
+                    if (el[column][line] != null) {
+                        int sensorsInCurrentColumn = el[column][line].getSensorsWithStickersCount();
+                        int sensorsInSideColumns = 0;
+                        if (el[getPreviousColumn(column)][line - 1] != null){
+                            sensorsInSideColumns += el[getPreviousColumn(column)][line - 1].getSensorsWithStickersCount();
                         }
-                    } else {
-                        if (el [i] + el[i + 1] + el[i + 2] >= modelParameters.getAbnormalStickerWarning()){
-                            algorithmResult.append("Sticker Warning at " + timeLine.elementAt(abnormalTCDeleted.indexOf(el)) + " in " + (i + 1) + " with following sensors: ");
-                            final int currentColumn = i + 1;
-                            final long currentTime = timeLine.elementAt(abnormalTCDeleted.indexOf(el));
-                            markedSensors.forEach((time, index) -> {
-                                if ((time == currentTime) && (coords [index] == currentColumn)){
-                                    algorithmResult.append(index + " ");
+                        if (el[getNextColumn(column)][line - 1] != null){
+                            sensorsInSideColumns += el[getNextColumn(column)][line - 1].getSensorsWithStickersCount();
+                        }
+                        if ((sensorsInCurrentColumn >= 2) && (sensorsInSideColumns >= 2)) {
+                            //Проверяем условия отмены
+                            STATUS_ABORTING_ALARM isAlarmPossible = checkAlarmPossibility(abnormalTCDetectedMatrix.indexOf(el), modelParameters);
+                            int totalSensorsCount = sensorsInCurrentColumn + sensorsInSideColumns;
+                            if (totalSensorsCount >= modelParameters.getAbnormalStickerAlarm()) {
+                                if (isAlarmPossible == STATUS_ABORTING_ALARM.POSSIBLE) {
+                                    lastDetectedAlarmTime = timeLine.elementAt(abnormalTCDetectedMatrix.indexOf(el));
+                                    algorithmResult.append("Alarm at " + timeLine.elementAt(abnormalTCDetectedMatrix.indexOf(el)) + " in " + (column + 1) + " with " +
+                                            totalSensorsCount + " sensors: " + el[column][line].getSensorsWithSticker() + "\n");
+                                    if (!showResults) {
+                                        return 1;
+                                    }
+                                } else {
+                                    algorithmResult.append("Aborted alarm at " + timeLine.elementAt(abnormalTCDetectedMatrix.indexOf(el)) + " in " + (column + 1) + " because of ");
+                                    switch (isAlarmPossible) {
+                                        case SPEED:
+                                            algorithmResult.append("too slow speed");
+                                            break;
+                                        case ACCELERATION:
+                                            algorithmResult.append("too fast acceleration");
+                                            break;
+                                        case LENGTH:
+                                            algorithmResult.append("too little cast length");
+                                            break;
+                                        case PREVIOUS_ALARM:
+                                            algorithmResult.append("previous alarm");
+                                    }
+                                    algorithmResult.append(" with " +
+                                            totalSensorsCount + " sensors: " + el[column][line].getSensorsWithSticker() + "\n");
                                 }
-                            });
-                            algorithmResult.append("\n");
+                            } else {
+                                if (totalSensorsCount >= modelParameters.getAbnormalStickerWarning()) {
+                                    algorithmResult.append("Warning at " + timeLine.elementAt(abnormalTCDetectedMatrix.indexOf(el)) + " in " + (column + 1) + " with " +
+                                            totalSensorsCount + " sensors: " + el[column][line].getSensorsWithSticker() + "\n");
+                                }
+                            }
                         }
                     }
                 }
@@ -221,42 +248,63 @@ public class Model {
         return 0;
     }
 
-    private boolean checkAlarmPossibility (int index, ModelParameters modelParameters){
+    private int getNextColumn (int currentColumn){
+        switch (currentColumn){
+            case 1: return 3;
+            case 9: return 11;
+            case 17: return 19;
+            case 25: return 27;
+        }
+        return ++currentColumn;
+    }
 
-        if (castLengthLine.elementAt(index) < modelParameters.getMinimumCastLentgh()) {
-            return false;
+    private int getPreviousColumn (int currentColumn){
+        switch (currentColumn){
+            case 3: return 1;
+            case 11: return 9;
+            case 19: return 17;
+            case 27: return 25;
+        }
+        return --currentColumn;
+    }
+
+    private STATUS_ABORTING_ALARM checkAlarmPossibility (int index, ModelParameters modelParameters){
+
+        if (castLengthLine.elementAt(index) < modelParameters.getMinimumCastLength()) {
+            return STATUS_ABORTING_ALARM.LENGTH;
         }
 
-        if (lastDetectedAlarmTime > timeLine.elementAt(index) - modelParameters.getMinimumTimeSinceLastAlarmDetected()){
-            return false;
+        if ((lastDetectedAlarmTime > timeLine.elementAt(index) - modelParameters.getMinimumTimeSinceLastAlarmDetected())&&(lastDetectedAlarmTime != timeLine.elementAt(index))){
+            return STATUS_ABORTING_ALARM.PREVIOUS_ALARM;
         }
 
         int currentIndex = index;
         while (currentIndex >= 0 && timeLine.elementAt(currentIndex) >= timeLine.elementAt(index) - modelParameters.getTimeForAlarmChecking()){
 
             if (speedLine.elementAt(currentIndex) < modelParameters.getMinimumSpeed()){
-                return false;
+                return STATUS_ABORTING_ALARM.SPEED;
 
             }
             if (speedRate.elementAt(currentIndex) > modelParameters.getMaximumSpeedRate()){
-                return false;
+                return STATUS_ABORTING_ALARM.ACCELERATION;
             }
             currentIndex--;
         }
-        return true;
+        return STATUS_ABORTING_ALARM.POSSIBLE;
     }
 
-    private void getFirstTimeOfSticker (int sensorId, int currentTimeIndex ,long latestTime, StickerInfo stickerInfo){
+    private void getFirstTimeOfSticker (int sensorId, int currentTimeIndex ,long latestTime, StickerInColumn stickerInColumn){
         for (int i = currentTimeIndex; i>=0; i--) {
             if (timeLine.elementAt(i) < latestTime){
                 return;
             }
             if (temperatureRiseDetected.elementAt(i)[sensorId] == 1) {
-                stickerInfo.setFirstTimeOfSticker(timeLine.elementAt(i));
-                stickerInfo.incSensorsWithStickersCount();
+                stickerInColumn.setFirstTimeOfSticker(timeLine.elementAt(i));
+                stickerInColumn.incSensorsWithStickersCount();
+                stickerInColumn.addSensorsWithSticker(sensorId);
                 int previousSensor = getPreviousSensorInColumn(sensorId);
                 if (previousSensor != -1) {
-                    getFirstTimeOfSticker(previousSensor, i, latestTime, stickerInfo);
+                    getFirstTimeOfSticker(previousSensor, i, latestTime, stickerInColumn);
                 }
                 return;
             }
@@ -396,6 +444,7 @@ public class Model {
             temperatureRate.add(new double[SENSORS_COUNT]);
             for (int i = 0; i < SENSORS_COUNT; i++) {
                 temperatureRate.lastElement()[i] = (rawTemperature.elementAt(l)[i] - rawTemperature.elementAt(j)[i]) / (rawTime.elementAt(l) - rawTime.elementAt(j));
+
             }
             //j = l;
             j++;
@@ -434,30 +483,7 @@ public class Model {
         return timeLine.lastElement();
     }
 
-    private class StickerInfo{
-        private long firstTimeOfSticker;
-        private int sensorsWithStickersCount;
 
-        StickerInfo(long firstTimeOfSticker) {
-            this.firstTimeOfSticker = firstTimeOfSticker;
-            this.sensorsWithStickersCount = 0;
-        }
 
-        long getFirstTimeOfSticker() {
-            return firstTimeOfSticker;
-        }
-
-        void setFirstTimeOfSticker(long firstTimeOfSticker) {
-            this.firstTimeOfSticker = firstTimeOfSticker;
-        }
-
-        int getSensorsWithStickersCount() {
-            return sensorsWithStickersCount;
-        }
-
-        void incSensorsWithStickersCount() {
-            this.sensorsWithStickersCount++;
-        }
-    }
 
 }

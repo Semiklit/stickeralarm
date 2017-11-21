@@ -16,13 +16,13 @@ public class ModelParameters {
     private final int abnormalInterval;
     private final int abnormalStickerAlarm;
     private final int abnormalStickerWarning;
-    private final int minimumCastLentgh;
+    private final int minimumCastLength;
     private final double minimumSpeed;
     private final double maximumSpeedRate;
     private final long timeForAlarmChecking;
     private final long minimumTimeSinceLastAlarmDetected;
 
-    public ModelParameters(int intervalForCalculatingSec, double minimumRisingRate, double maximumRisingRate, double minimumFallingRate, double maximumFallingRate, int minimumTempreture, int maximumTempreture, int minimumDurationTempRise, int maximumDurationTempRise, int minimumDurationTempFall, double minimumRatioStickerSpeedToCastingSpeed, double maximumRatioStickerSpeedToCastingSpeed, int abnormalInterval, int abnormalStickerAlarm, int abnormalStickerWarning, int minimumCastLentgh, double minimumSpeed, double maximumSpeedRate, long timeForAlarmChecking, long minimumTimeSinceLastAlarmDetected) {
+    public ModelParameters(int intervalForCalculatingSec, double minimumRisingRate, double maximumRisingRate, double minimumFallingRate, double maximumFallingRate, int minimumTempreture, int maximumTempreture, int minimumDurationTempRise, int maximumDurationTempRise, int minimumDurationTempFall, double minimumRatioStickerSpeedToCastingSpeed, double maximumRatioStickerSpeedToCastingSpeed, int abnormalInterval, int abnormalStickerAlarm, int abnormalStickerWarning, int minimumCastLength, double minimumSpeed, double maximumSpeedRate, long timeForAlarmChecking, long minimumTimeSinceLastAlarmDetected) {
         this.intervalForCalculatingSec = intervalForCalculatingSec;
         this.minimumRisingRate = minimumRisingRate;
         this.maximumRisingRate = maximumRisingRate;
@@ -38,7 +38,7 @@ public class ModelParameters {
         this.abnormalInterval = abnormalInterval;
         this.abnormalStickerAlarm = abnormalStickerAlarm;
         this.abnormalStickerWarning = abnormalStickerWarning;
-        this.minimumCastLentgh = minimumCastLentgh;
+        this.minimumCastLength = minimumCastLength;
         this.minimumSpeed = minimumSpeed;
         this.maximumSpeedRate = maximumSpeedRate;
         this.timeForAlarmChecking = timeForAlarmChecking;
@@ -61,12 +61,50 @@ public class ModelParameters {
         abnormalInterval = 30;
         abnormalStickerAlarm = 6;
         abnormalStickerWarning = 3;
-        minimumCastLentgh = 3;
+        minimumCastLength = 3;
         minimumSpeed = 0.5;
         maximumSpeedRate = 0.006;
         timeForAlarmChecking = 120;
         minimumTimeSinceLastAlarmDetected = 60;
+    }
 
+    public ModelParameters(double[] input){
+        intervalForCalculatingSec = 5;
+        minimumRisingRate = input[0];
+        maximumRisingRate = input[1];
+        minimumFallingRate = input[2];
+        maximumFallingRate = input[3];
+        minimumTempreture = 50;
+        maximumTempreture = 200;
+        minimumDurationTempRise = (int) input[4];
+        maximumDurationTempRise = (int) input[5];
+        minimumDurationTempFall = (int) input[6];
+        minimumRatioStickerSpeedToCastingSpeed = input[7];
+        maximumRatioStickerSpeedToCastingSpeed = input[8];
+        abnormalInterval = (int)input[9];
+        abnormalStickerAlarm = (int)input[10];
+        abnormalStickerWarning = 3;
+        minimumCastLength = 3;
+        minimumSpeed = 0.5;
+        maximumSpeedRate = 0.006;
+        timeForAlarmChecking = 120;
+        minimumTimeSinceLastAlarmDetected = 60;
+    }
+
+    public double[] getParametersArray(){
+        double[] result = new double[11];
+        result [0] = minimumRisingRate;
+        result [1] = maximumRisingRate;
+        result [2] = minimumFallingRate;
+        result [3] = maximumFallingRate;
+        result [4] = minimumDurationTempRise;
+        result [5] = maximumDurationTempRise;
+        result [6] = minimumDurationTempFall;
+        result [7] = minimumRatioStickerSpeedToCastingSpeed;
+        result [8] = maximumRatioStickerSpeedToCastingSpeed;
+        result [9] = abnormalInterval;
+        result [10] = abnormalStickerAlarm;
+        return result;
     }
 
     public int getIntervalForCalculatingSec() {
@@ -90,11 +128,11 @@ public class ModelParameters {
         return maximumFallingRate;
     }
 
-    public int getMinimumTempreture() {
+    public int getMinimumTemperature() {
         return minimumTempreture;
     }
 
-    public int getMaximumTempreture() {
+    public int getMaximumTemperature() {
         return maximumTempreture;
     }
 
@@ -130,8 +168,8 @@ public class ModelParameters {
         return abnormalStickerWarning;
     }
 
-    public int getMinimumCastLentgh() {
-        return minimumCastLentgh;
+    public int getMinimumCastLength() {
+        return minimumCastLength;
     }
 
     public double getMinimumSpeed() {

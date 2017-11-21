@@ -3,6 +3,7 @@ package ru.nikitasemiklit.gui;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import org.knowm.xchart.*;
+import ru.nikitasemiklit.GeneticMode;
 import ru.nikitasemiklit.PackageMode;
 import ru.nikitasemiklit.enums.TYPE_DATA_TO_DRAW;
 import ru.nikitasemiklit.model.Model;
@@ -38,6 +39,7 @@ public class Window extends JFrame {
     private static final JButton resetConfigurationButton = new JButton("Reset defaults");
     private static final JButton countForArrayFiles = new JButton("Package mode");
     private static final JButton smoothButton = new JButton("Smooth chart");
+    private static final JButton geneticButton = new JButton("Genetic algorithm");
 
     private static final JLabel statusLabel = new JLabel("Status");
     private static final JLabel filePathLabel = new JLabel("File path");
@@ -132,6 +134,7 @@ public class Window extends JFrame {
         openFileButton.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                recountModelParameters();
                 JFileChooser fileChooser = new JFileChooser();
                 if (dir != null) {
                     fileChooser.setCurrentDirectory(dir);
@@ -229,6 +232,7 @@ public class Window extends JFrame {
         alarmCheckingControlArea.add(smoothField);
         alarmCheckingControlArea.add(resetConfigurationButton);
         alarmCheckingControlArea.add(countForArrayFiles);
+        alarmCheckingControlArea.add(geneticButton);
 
         bottomArea.add(dataControlArea);
         bottomArea.add(calculationControlArea);
@@ -370,6 +374,38 @@ public class Window extends JFrame {
             }
         });
 
+        geneticButton.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                int ret = fileChooser.showDialog(null, "Открыть директорию с файлами");
+                if (ret == JFileChooser.APPROVE_OPTION) {
+                    File filesDirectory = fileChooser.getSelectedFile();
+                    fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                    ret = fileChooser.showDialog(null, "Открыть тестовый файл");
+                    if (ret == JFileChooser.APPROVE_OPTION) {
+                        File trainingFile = fileChooser.getSelectedFile();
+                        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                        ret = fileChooser.showDialog(null, "Открыть директорию для результатов");
+                        if (ret == JFileChooser.APPROVE_OPTION) {
+                            File dirToResults = fileChooser.getSelectedFile();
+                            try {
+                                GeneticMode geneticMode = new GeneticMode(filesDirectory, trainingFile, dirToResults);
+                                geneticMode.run();
+                            } catch (ParseException ex) {
+                                System.out.println(ex.getMessage());
+                            } catch (IOException ex) {
+                                System.out.println(ex.getMessage());
+                            }
+                        }
+                    }
+                }
+
+
+            }
+        });
+
 
     }
 
@@ -405,8 +441,8 @@ public class Window extends JFrame {
         maximumRisingRateField.setText(Double.toString(modelParameters.getMaximumRisingRate()));
         minimumFallingRateField.setText(Double.toString(modelParameters.getMinimumFallingRate()));
         maximumFallingRateField.setText(Double.toString(modelParameters.getMaximumFallingRate()));
-        minimumTemperatureField.setText(Integer.toString(modelParameters.getMinimumTempreture()));
-        maximumTemperatureField.setText(Integer.toString(modelParameters.getMaximumTempreture()));
+        minimumTemperatureField.setText(Integer.toString(modelParameters.getMinimumTemperature()));
+        maximumTemperatureField.setText(Integer.toString(modelParameters.getMaximumTemperature()));
         minimumDurationTempRiseField.setText(Integer.toString(modelParameters.getMinimumDurationTempRise()));
         maximumDurationTempRiseField.setText(Integer.toString(modelParameters.getMaximumDurationTempRise()));
         minimumDurationTempFallField.setText(Integer.toString(modelParameters.getMinimumDurationTempFall()));
@@ -415,7 +451,7 @@ public class Window extends JFrame {
         abnormalIntervalField.setText(Integer.toString(modelParameters.getAbnormalInterval()));
         abnormalStickerAlarmField.setText(Integer.toString(modelParameters.getAbnormalStickerAlarm()));
         abnormalStickerWarningField.setText(Integer.toString(modelParameters.getAbnormalStickerWarning()));
-        minimumCastLentghField.setText(Integer.toString(modelParameters.getMinimumCastLentgh()));
+        minimumCastLentghField.setText(Integer.toString(modelParameters.getMinimumCastLength()));
         minimumSpeedField.setText(Double.toString(modelParameters.getMinimumSpeed()));
         maximumSpeedRateField.setText(Double.toString(modelParameters.getMaximumSpeedRate()));
         timeForAlarmCheckingField.setText(Long.toString(modelParameters.getTimeForAlarmChecking()));
