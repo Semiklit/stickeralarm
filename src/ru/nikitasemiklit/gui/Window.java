@@ -6,6 +6,7 @@ import org.knowm.xchart.*;
 import ru.nikitasemiklit.GeneticMode;
 import ru.nikitasemiklit.PackageMode;
 import ru.nikitasemiklit.enums.TYPE_DATA_TO_DRAW;
+import ru.nikitasemiklit.model.ChartManager;
 import ru.nikitasemiklit.model.Model;
 import ru.nikitasemiklit.model.ModelParameters;
 import ru.nikitasemiklit.model.RawData;
@@ -26,8 +27,8 @@ public class Window extends JFrame {
 
     private static ModelParameters modelParameters;
 
-    private Model model;
     private RawData rawData;
+    private ChartManager chartManager;
 
     private File dir = null;
 
@@ -146,9 +147,9 @@ public class Window extends JFrame {
                         dir = file.getParentFile();
                         filePathField.setText(file.getName());
                         rawData = RawData.parseFile(file);
-                        model = Model.countTempRate(rawData, modelParameters.getIntervalForCalculatingSec());
-                        timeFromField.setText((model.getFirstTime()).toString());
-                        timeToField.setText((model.getLastTime()).toString());
+                        chartManager = new ChartManager(Model.countTempRate(rawData, modelParameters.getIntervalForCalculatingSec()));
+                        timeFromField.setText(String.valueOf(chartManager.timeBegin));
+                        timeToField.setText(String.valueOf(chartManager.timeEnd));
                     }
                     catch (ParseException ex){
                         statusLabel.setText("Invalid file");
@@ -255,7 +256,7 @@ public class Window extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 recountModelParameters();
-                model.countCriticalSensors(modelParameters, true);
+                chartManager.model.countCriticalSensors(modelParameters, true);
             }
         });
 
@@ -280,7 +281,7 @@ public class Window extends JFrame {
                 if (drawBySensors.isSelected()){
                     draw = TYPE_DATA_TO_DRAW.SENSORS;
                 }
-                chart = model.getChart(timeFrom, timeTo, dataToDrawField.getText(), speedLineCheckBox.isSelected(), draw);
+                chart = chartManager.getChart(timeFrom, timeTo, dataToDrawField.getText(), speedLineCheckBox.isSelected(), draw);
                 workArea.remove(0);
                 workArea.add(new XChartPanel<>(chart), 0);
                 statusLabel.setText("Updated at " + System.currentTimeMillis());
@@ -370,7 +371,7 @@ public class Window extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 double alpha = Double.parseDouble(alphaFiled.getText());
-                model.smooth(alpha);
+                chartManager.model.smooth(alpha);
             }
         });
 
