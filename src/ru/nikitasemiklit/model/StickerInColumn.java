@@ -17,9 +17,13 @@ public class StickerInColumn {
         return firstTimeOfSticker;
     }
 
-    void addSensorsWithSticker (int sensor){
+    void addLastSensorsWithSticker(int sensor){
         sensorsWithSticker.add(sensor);
         firstSensorWithSticker = sensor;
+    }
+
+    void addSensorWithSticker(int sensor){
+        sensorsWithSticker.add(sensor);
     }
 
     int getFirstSensorWithSticker(){

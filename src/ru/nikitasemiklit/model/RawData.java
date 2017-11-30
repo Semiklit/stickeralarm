@@ -64,7 +64,7 @@ public class RawData {
                         if (rawTemperature.size() != 1) {
                             rawTemperature.lastElement()[i] = rawTemperature.elementAt(rawTemperature.indexOf(rawTemperature.lastElement()) - 1)[i];
                         } else {
-                            rawTemperature.lastElement()[i] = .0;
+                            rawTemperature.lastElement()[i] = -500.0;
                         }
                     }
                 }

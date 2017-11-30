@@ -3,7 +3,6 @@ package ru.nikitasemiklit.model;
 import ru.nikitasemiklit.enums.STATUS_ABORTING_ALARM;
 import ru.nikitasemiklit.gui.ResultPane;
 
-import java.awt.*;
 import java.io.*;
 import java.util.Scanner;
 import java.util.Vector;
@@ -171,9 +170,7 @@ public class Model {
                             if (temperatureFall) {
                                 //все условия выполнены, записываем сработавшие датчики
 
-
                                 abnormalTCDetectedMatrix.elementAt(currentIndex) [coords[i] - 1][i / COLUMNS_COUNT] = stickerInColumn;
-
 
                             }
                         }
@@ -185,7 +182,7 @@ public class Model {
         StringBuilder algorithmResult = new StringBuilder();
 
         for (StickerInColumn[][] el : abnormalTCDetectedMatrix){
-            for (int line = 3; line < LINES_COUNT; line++){
+            for (int line = 2; line < LINES_COUNT; line++){
                 for (int column = 1; column < COLUMNS_COUNT - 1; column = getNextColumn(column)){
 
 
@@ -199,7 +196,7 @@ public class Model {
                         boolean usePreviousColumn = true;
                         boolean useNextColumn = true;
 
-                        for (int i =0; i<3; i++){
+                        for (int i =0; i<2; i++){
 
                             if (el[getPreviousColumn(column)][line - i] != null && usePreviousColumn){
                                 sensorsInSideColumns += el[getPreviousColumn(column)][line - i].getSensorsWithStickersCount();
@@ -312,17 +309,33 @@ public class Model {
     }
 
     private void getFirstTimeOfSticker (int sensorId, int currentTimeIndex ,long latestTime, StickerInColumn stickerInColumn){
+
         for (int i = currentTimeIndex; i>=0; i--) {
             if (timeLine.elementAt(i) < latestTime){
                 return;
             }
-            if (temperatureRiseDetected.elementAt(i)[sensorId] == 1) {
-                stickerInColumn.setFirstTimeOfSticker(timeLine.elementAt(i));
-                stickerInColumn.incSensorsWithStickersCount();
-                stickerInColumn.addSensorsWithSticker(sensorId);
+            if (temperatureRate.elementAt(i)[sensorId] != -500) {
+                if (temperatureRiseDetected.elementAt(i)[sensorId] == 1) {
+                    stickerInColumn.setFirstTimeOfSticker(timeLine.elementAt(i));
+                    stickerInColumn.incSensorsWithStickersCount();
+                    stickerInColumn.addLastSensorsWithSticker(sensorId);
+                    int previousSensor = getPreviousSensorInColumn(sensorId);
+                    if (previousSensor != -1) {
+                        getFirstTimeOfSticker(previousSensor, i, latestTime, stickerInColumn);
+                    }
+                    return;
+                }
+            }
+            else
+            {
+                int sensorCount = stickerInColumn.getSensorsWithStickersCount();
                 int previousSensor = getPreviousSensorInColumn(sensorId);
                 if (previousSensor != -1) {
                     getFirstTimeOfSticker(previousSensor, i, latestTime, stickerInColumn);
+                    if (sensorCount < stickerInColumn.getSensorsWithStickersCount()) {
+                        stickerInColumn.incSensorsWithStickersCount();
+                        stickerInColumn.addSensorWithSticker(sensorId);
+                    }
                 }
                 return;
             }
@@ -367,7 +380,14 @@ public class Model {
 
             temperatureRate.add(new double[SENSORS_COUNT]);
             for (int i = 0; i < SENSORS_COUNT; i++) {
-                temperatureRate.lastElement()[i] = (rawTemperature.elementAt(l)[i] - rawTemperature.elementAt(j)[i]) / (rawTime.elementAt(l) - rawTime.elementAt(j));
+                if (rawTemperature.elementAt(l)[i] != -500) {
+
+                     temperatureRate.lastElement()[i] = (rawTemperature.elementAt(l)[i] - rawTemperature.elementAt(j)[i]) / (rawTime.elementAt(l) - rawTime.elementAt(j));
+
+                } else {
+                    temperatureRate.lastElement()[i] = -500;
+                }
+
 
             }
             //j = l;
@@ -399,11 +419,11 @@ public class Model {
         return -1;
     }
 
-    public Long getFirstTime (){
+    Long getFirstTime (){
         return timeLine.firstElement();
     }
 
-    public Long getLastTime (){
+    Long getLastTime (){
         return timeLine.lastElement();
     }
 
