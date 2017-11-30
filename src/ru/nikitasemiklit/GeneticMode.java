@@ -172,7 +172,7 @@ public class GeneticMode {
             System.out.println("Added data: " + fileName + " " + data);
         }
 
-        int getResultForFile (String fileName){
+        synchronized int getResultForFile (String fileName){
             for (int i = 0; i< fileNames.size(); i++){
                 if (fileName.equals(fileNames.elementAt(i))){
                     return datas.elementAt(i);
@@ -207,10 +207,10 @@ public class GeneticMode {
             }
 
             for (int j=0; j<11; j++){
-                if (Math.random() < 0.5){
+                if (Math.random() < 0.1){
                     firstSample[j] = getRandomParameter(j);
                 }
-                if (Math.random() < 0.5){
+                if (Math.random() < 0.1){
                     secondSample[j] = getRandomParameter(j);
                 }
             }
@@ -235,7 +235,7 @@ public class GeneticMode {
             case 7: return 0.2 + Math.random() * 0.4;
             case 8: return 1.3 + Math.random() * 1.9;
             case 9: return 25 + Math.random() * 45;
-            case 10: return 6 + Math.random() * 4;
+            case 10: return 7;// 6 + Math.random() * 4;
         }
         return 0;
     }

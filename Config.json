@@ -1,1 +1,22 @@
-{"intervalForCalculatingSec":5,"minimumRisingRate":0.18,"maximumRisingRate":2.2,"minimumFallingRate":-0.17,"maximumFallingRate":-2.0,"minimumTempreture":50,"maximumTempreture":200,"minimumDurationTempRise":3,"maximumDurationTempRise":25,"minimumDurationTempFall":5,"minimumRatioStickerSpeedToCastingSpeed":0.38,"maximumRatioStickerSpeedToCastingSpeed":1.5,"abnormalInterval":30,"abnormalStickerAlarm":6,"abnormalStickerWarning":3,"minimumCastLentgh":3,"minimumSpeed":0.5,"maximumSpeedRate":0.006,"timeForAlarmChecking":120,"minimumTimeSinceLastAlarmDetected":60}
+{
+    "intervalForCalculatingSec": 5,
+    "minimumRisingRate": 0.38006976976096196,
+    "maximumRisingRate": 4.625738068866832,
+    "minimumFallingRate": -0.6346636139311462,
+    "maximumFallingRate": -3.231456390128524,
+    "minimumTempreture": 50,
+    "maximumTempreture": 200,
+    "minimumDurationTempRise": 3,
+    "maximumDurationTempRise": 41,
+    "minimumDurationTempFall": 3,
+    "minimumRatioStickerSpeedToCastingSpeed": 0.5182311806099502,
+    "maximumRatioStickerSpeedToCastingSpeed": 1.5161901548539063,
+    "abnormalInterval": 25,
+    "abnormalStickerAlarm": 7,
+    "abnormalStickerWarning": 3,
+    "minimumCastLength": 3,
+    "minimumSpeed": 0.5,
+    "maximumSpeedRate": 0.006,
+    "timeForAlarmChecking": 120,
+    "minimumTimeSinceLastAlarmDetected": 60
+}
